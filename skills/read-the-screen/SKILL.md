@@ -10,8 +10,27 @@ rules, whether a feed is connected, or who authored an entry. Four of those five
 decide what a catch-up consists of, so a run that skips them is a run doing
 arithmetic on an unknown.
 
-Do not try to drive a browser to get them. The owner is already logged in, and
-they can read five numbers off a screen faster than any scraper. Ask.
+**Read this first: there are two ways to get them, and the better one is
+[`work-in-the-browser`](../work-in-the-browser/SKILL.md).** Where the owner runs
+an agent with browser access and has QuickBooks open in their own signed-in
+window, the agent reads four of these five off the screen itself, records each
+with the date, and keeps the read on disk so it can be checked afterwards. A
+number a person recalls cannot be checked, and a number read off the screen and
+saved can be.
+
+    python3 bin/books.py browser confirm --company "the name the header shows"
+    python3 bin/books.py browser read --surface banking --from reports/browser-reads/banking.json
+
+This skill is what runs when that is not available: a chat agent with no
+browser, a session where the owner would rather not have anything driving their
+books, or any moment where the browser read comes back in a shape that does not
+prove what it claims. Then ask, because the owner is already logged in and can
+read five numbers off a screen faster than any scraper.
+
+The one figure browser mode still cannot get on its own is the bank's own
+balance, unless the owner also has their banking portal open. It does not come
+from the QuickBooks tile. The tile shows what the books think the account holds,
+and that is the figure under test.
 
 ## Hard gates
 
@@ -67,6 +86,24 @@ something that is yours to decide.
 A good round reads like this: "Open Transactions, Bank transactions in
 QuickBooks. On each account tile there is a line under the balance saying when
 it last updated. What does it say for each account?"
+
+## The same facts, read off the screen instead
+
+Where browser mode is available, these are the commands that replace the asking.
+Each one validates the shape of what it was given before it records anything, so
+a short read of a virtualized grid is refused rather than believed.
+
+```
+python3 bin/books.py browser read --surface banking            # tiles: queue depth, feed state
+python3 bin/books.py browser read --surface for-review         # one account's queue, in full
+python3 bin/books.py browser read --surface reconcile-summary  # reconciled through, every account
+python3 bin/books.py browser read --surface rules              # rules, and how many post unseen
+python3 bin/books.py browser read --surface audit-log          # who last worked in the file
+```
+
+They write into the same `answers/live-screen.json` with the same dates, so
+every later command reads them the same way and cannot tell which route a fact
+arrived by.
 
 ## What is done with the answers
 

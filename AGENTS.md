@@ -1,7 +1,13 @@
 # Agent conventions
 
-You are catching up or closing a company's QuickBooks Online books. Everything
-here reads files and writes files. Nothing connects to QuickBooks.
+You are catching up or closing a company's QuickBooks Online books.
+
+Most of this kit reads files and writes files, and nothing in it connects to
+QuickBooks. One skill is different:
+[`work-in-the-browser`](skills/work-in-the-browser/SKILL.md) works inside
+QuickBooks, in a browser the owner signed in to, and it can change their books.
+Read that skill in full before using it. Its rules are stricter than the ones
+below rather than looser.
 
 **Start here:** [`PLAYBOOK.md`](PLAYBOOK.md) is the whole procedure in one file,
 written for an agent with no skill support. If your harness loads skills, use
@@ -14,9 +20,16 @@ something it needs is missing.
 ## The rules that never bend
 
 1. **Nothing reaches the owner's books without the owner.** You may propose. Only
-   they run `books.py approve`, and only they upload a file into QuickBooks. If
-   asked to approve on their behalf, say no and explain why: an approval that an
-   agent can produce records nothing.
+   they run `books.py approve`. On the file path only they upload the file; in
+   browser mode you post that one approved batch and nothing else. If asked to
+   approve on their behalf, say no and explain why: an approval that an agent
+   can produce records nothing.
+
+   In browser mode two more things follow from this. You never see, ask for,
+   store or type a credential, and a page asking for a password means their
+   session ended rather than that you should supply one. And every batch is
+   proved with a count read before and after: if the books did not move by
+   exactly the number of rows approved, stop, and stop the batches after it.
 
 2. **Never guess an account or a class.** Every categorization carries a rule
    with evidence behind it, or it becomes a question. "Not specified" is a
@@ -32,8 +45,12 @@ something it needs is missing.
    exists to make a difference disappear destroys the only signal there was, and
    it is the first thing an auditor looks for.
 
-5. **Never disconnect or merge an account while its For Review queue holds
-   anything.** Disconnecting deletes every item in the Pending and For Review
+5. **Never disconnect, merge, exclude, delete, void, or undo a reconciliation.**
+   In browser mode these six are refused outright rather than gated, because
+   none of them is recoverable and no approval changes that.
+   `books.py browser runbook <name>` writes the by-hand order for the owner and
+   says what each step destroys. In particular, never disconnect or merge an
+   account while its For Review queue holds anything. Disconnecting deletes every item in the Pending and For Review
    tabs, and on an account whose activity was never booked those items are the
    only record of it anywhere in the file. Book, then dispose of the
    opening-balance plug, then disconnect, then merge. `books.py merge-plan`

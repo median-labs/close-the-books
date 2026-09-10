@@ -1,0 +1,249 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Fake For Review grid</title>
+<!--
+A standing-in-for-QuickBooks For Review grid, so that browser mode can be
+exercised without pointing it at anybody's books.
+
+You cannot test this mode against a real company file. There is no sandbox that
+behaves like the real interface, and a mistake in a real file is not
+recoverable. So the four behaviours that actually make this interface dangerous
+are reproduced here, and the flow is driven against them instead:
+
+  1. THE GRID IS VIRTUALIZED. Only the visible window is in the document, so a
+     naive read of the rows returns about 34 of them whatever the header says.
+  2. SETTING scrollTop DOES NOTHING VISIBLE. It reports the new value back and
+     re-renders nothing. Only a real wheel event re-renders, which is why an
+     agent that scrolls programmatically reads the same 34 rows forever.
+  3. THE DEFAULT VIEW UNDERCOUNTS. The count on the tab is the count under one
+     type filter. Split the filter, read each part, and add the parts.
+  4. THE ROW CHECKBOX ONLY EXISTS ON HOVER. It is not in the document until the
+     pointer is over the row, so a click at its coordinates lands on nothing.
+
+The row model is reachable off the grid element, the way the real one is
+reachable by walking up the React fiber to the table instance:
+
+    document.getElementById('grid').__rowModel.map(r => r.original)
+
+There is also a rule that fires underneath the work, off by default. Turn it on
+with ?rule=1 and it accepts one extra row the moment a batch is accepted, which
+is what the count check after a batch exists to catch.
+
+Open it with a query string to choose the shape:
+    ?rows=600&displayed=401&rule=1
+-->
+<style>
+  body { font: 14px/1.45 system-ui, sans-serif; margin: 0; padding: 24px;
+         color: #1c1a17; background: #faf8f5; }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  .tabs { margin: 16px 0 8px; }
+  .tabs button { font: inherit; padding: 6px 12px; margin-right: 6px;
+                 border: 1px solid #cfc9c0; background: #fff; cursor: pointer; }
+  .tabs button[aria-selected="true"] { background: #1c1a17; color: #faf8f5; }
+  #viewport { height: 420px; overflow-y: scroll; border: 1px solid #cfc9c0;
+              background: #fff; position: relative; }
+  #spacer { position: relative; }
+  table { width: 100%; border-collapse: collapse; position: absolute;
+          top: 0; left: 0; }
+  td, th { padding: 6px 10px; text-align: left; border-bottom: 1px solid #eee7dd;
+           font-size: 13px; white-space: nowrap; }
+  th { position: sticky; top: 0; background: #f2ede5; }
+  td.amount { text-align: right; font-variant-numeric: tabular-nums; }
+  .phantom { visibility: hidden; }
+  tr:hover .phantom { visibility: visible; }
+  .klass { display: none; }
+  body.show-class .klass { display: table-cell; }
+  .meta { color: #6b635a; font-size: 12px; }
+</style>
+
+<h1>Bank transactions</h1>
+<p class="meta">Checking 0000 &middot; a page that behaves the way the real one
+  behaves, holding transactions that never happened</p>
+
+<div class="tabs">
+  <button id="tab-all" aria-selected="true">For review (<span id="count">0</span>)</button>
+  <button id="tab-received" aria-selected="false">Received</button>
+  <button id="tab-spent" aria-selected="false">Spent</button>
+  <button id="tab-class">Toggle the Class column</button>
+</div>
+
+<div id="viewport"><div id="spacer"><table id="grid">
+  <thead><tr>
+    <th class="phantom-head"></th><th>Date</th><th>Description</th>
+    <th class="amount">Amount</th><th>Category</th><th class="klass">Class</th>
+    <th>Payee</th><th></th>
+  </tr></thead>
+  <tbody id="body"></tbody>
+</table></div></div>
+
+<p class="meta" id="status"></p>
+
+<script>
+(function () {
+  var q = new URLSearchParams(location.search);
+  var TOTAL = parseInt(q.get('rows') || '600', 10);
+  // The number the tab shows. It is the default view, and the default view is
+  // one type filter, so it is smaller than the queue.
+  var DISPLAYED = parseInt(q.get('displayed') || '0', 10);
+  var RULE_ON = q.get('rule') === '1';
+  var ROW_H = 30, WINDOW = 34;   // the window size a naive read comes back with
+
+  var VENDORS = ['ACH DEBIT NORTHWIND SUPPLY', 'ACH DEBIT QUARTZ CAD SVCS',
+                 'CARD PURCHASE BLUEPEAK', 'ACH CREDIT CONTOSO PAYOUT',
+                 'ACH DEBIT WINGTIP WORKSPACE', 'CARD PURCHASE FABRIKAM',
+                 'ACH CREDIT ADVENTUREWORKS', 'ACH DEBIT LITWARE LEGAL'];
+
+  var rows = [];
+  for (var i = 0; i < TOTAL; i++) {
+    var received = (i % 5) === 3;
+    rows.push({
+      id: 'row-' + (i + 1),
+      original: {
+        id: 'row-' + (i + 1),
+        date: '2025-' + String((i % 12) + 1).padStart(2, '0') + '-'
+              + String((i % 27) + 1).padStart(2, '0'),
+        descriptor: VENDORS[i % VENDORS.length] + ' ' + (10000 + i * 7),
+        amount: (received ? 1 : -1) * (25 + ((i * 137) % 4000) + 0.25),
+        type: received ? 'Received' : 'Spent',
+        category: '', klass: '', payee: '', accepted: false
+      }
+    });
+  }
+  if (!DISPLAYED) DISPLAYED = rows.filter(function (r) {
+    return r.original.type === 'Spent';
+  }).length;
+
+  var grid = document.getElementById('grid');
+  var body = document.getElementById('body');
+  var viewport = document.getElementById('viewport');
+  var spacer = document.getElementById('spacer');
+  var filter = 'all';
+  var top = 0;
+
+  // The whole row model, the way the real grid keeps it on its table instance.
+  // Reading THIS is how you get every row. Reading the document gets you the
+  // window, and the window is 34 rows.
+  grid.__rowModel = rows;
+  grid.getRowModel = function () { return { rows: live() }; };
+
+  function live() {
+    return rows.filter(function (r) {
+      if (r.original.accepted) return false;
+      if (filter === 'all') return true;
+      return r.original.type === filter;
+    });
+  }
+
+  function money(n) {
+    var s = Math.abs(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    return n < 0 ? '(' + s + ')' : s;
+  }
+
+  function render() {
+    var shown = live();
+    spacer.style.height = (shown.length * ROW_H) + 'px';
+    var first = Math.max(0, Math.floor(top / ROW_H));
+    var slice = shown.slice(first, first + WINDOW);
+    body.innerHTML = '';
+    slice.forEach(function (r) {
+      var o = r.original;
+      var tr = document.createElement('tr');
+      tr.dataset.id = o.id;
+      tr.innerHTML =
+        '<td><input type="checkbox" class="phantom" data-role="select"></td>' +
+        '<td>' + o.date + '</td>' +
+        '<td>' + o.descriptor + '</td>' +
+        '<td class="amount">' + money(o.amount) + '</td>' +
+        '<td><input data-role="category" value="' + o.category + '" size="18"></td>' +
+        '<td class="klass"><input data-role="class" value="' + o.klass + '" size="10"></td>' +
+        '<td><input data-role="payee" value="' + o.payee + '" size="14"></td>' +
+        '<td><button class="phantom" data-role="accept">Accept</button></td>';
+      body.appendChild(tr);
+    });
+    document.querySelector('#spacer table').style.transform =
+      'translateY(' + (first * ROW_H) + 'px)';
+    document.getElementById('count').textContent =
+      filter === 'all' ? countDisplayed() : shown.length;
+    document.getElementById('status').textContent =
+      'in the document: ' + slice.length + ' rows. In the queue: '
+      + shown.length + '. On the tab: ' + countDisplayed() + '.';
+  }
+
+  // What the tab claims, which is the count under one type filter and not the
+  // queue. Accepting rows takes them out of it the same way.
+  function countDisplayed() {
+    var spent = rows.filter(function (r) {
+      return !r.original.accepted && r.original.type === 'Spent';
+    }).length;
+    return Math.min(DISPLAYED, spent);
+  }
+
+  // A real wheel event re-renders. Assigning scrollTop does not, which is the
+  // trap: the property reports the value you set and the document keeps the
+  // rows it already had.
+  viewport.addEventListener('wheel', function (e) {
+    top = Math.max(0, Math.min(top + e.deltaY, spacer.offsetHeight - 400));
+    viewport.scrollTop = top;
+    render();
+  }, { passive: true });
+
+  document.addEventListener('click', function (e) {
+    var role = e.target.dataset && e.target.dataset.role;
+    if (role === 'accept') {
+      var tr = e.target.closest('tr');
+      var row = rows.filter(function (r) { return r.original.id === tr.dataset.id; })[0];
+      if (!row) return;
+      var cat = tr.querySelector('[data-role="category"]').value.trim();
+      // Posting with no category is what writes "Uncategorized" in the real
+      // one, and posting with no class is what writes "Not specified".
+      row.original.category = cat || 'Uncategorized Expense';
+      row.original.klass = tr.querySelector('[data-role="class"]').value.trim()
+                           || 'Not specified';
+      row.original.payee = tr.querySelector('[data-role="payee"]').value.trim();
+      row.original.accepted = true;
+      if (RULE_ON) fireRule();
+      render();
+    }
+    if (e.target.id === 'tab-all') { filter = 'all'; select(e.target); render(); }
+    if (e.target.id === 'tab-received') { filter = 'Received'; select(e.target); render(); }
+    if (e.target.id === 'tab-spent') { filter = 'Spent'; select(e.target); render(); }
+    if (e.target.id === 'tab-class') { document.body.classList.toggle('show-class'); }
+  });
+
+  function select(btn) {
+    ['tab-all', 'tab-received', 'tab-spent'].forEach(function (id) {
+      document.getElementById(id).setAttribute('aria-selected', String(id === btn.id));
+    });
+  }
+
+  // A bank rule with auto-add on, accepting a row nobody looked at. This is the
+  // thing the count after a batch exists to catch, and it is why the check is a
+  // halt rather than a warning.
+  function fireRule() {
+    var next = rows.filter(function (r) { return !r.original.accepted; })[40];
+    if (next) {
+      next.original.accepted = true;
+      next.original.category = 'Uncategorized Expense';
+      next.original.klass = 'Not specified';
+    }
+  }
+
+  window.__queue = {
+    total: function () { return live().length; },
+    displayed: countDisplayed,
+    parts: function () {
+      return ['Received', 'Spent'].map(function (t) {
+        return { filter: t, rows: rows.filter(function (r) {
+          return !r.original.accepted && r.original.type === t;
+        }).length };
+      });
+    },
+    accepted: function () {
+      return rows.filter(function (r) { return r.original.accepted; })
+                 .map(function (r) { return r.original; });
+    }
+  };
+
+  render();
+})();
+</script>

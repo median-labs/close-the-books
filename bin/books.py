@@ -85,7 +85,7 @@ except ImportError:  # pragma: no cover - environment, not logic
     sys.exit(REFUSAL)
 
 from closethebooks import (  # noqa: E402
-    autoposted, bank_csv, coverage as coverage_mod, evidence as evidence_mod,
+    autoposted, bank_csv, browser, coverage as coverage_mod, evidence as evidence_mod,
     exit_tests, feed_gaps, filing_year as filing_year_mod, twins,
     je_worksheet, matching, median, precedent, profile as profile_mod,
     qbo_exports, readiness,
@@ -121,6 +121,13 @@ REFUSING_ERRORS = (
     review_workbook.ReviewFileError, je_worksheet.WorksheetError,
     rules_xlsx.RuleNotExportable, rules_xlsx.TemplateUnusable,
     bank_csv.UploadTooLarge, bank_csv.BankLineError,
+    # Everything browser mode stops on: an unconfirmed company, a read whose
+    # shape proves nothing, a run that is already open. Each is a refusal
+    # rather than a crash, and each names the one fact that would change it.
+    # `browser.CountMismatch` is deliberately caught before it reaches here:
+    # a count that did not add up is a finding about the books rather than a
+    # missing input, so it exits 1.
+    browser.BrowserError,
 )
 
 
@@ -1548,6 +1555,1055 @@ def _wrapped(text, width):
     return out
 
 
+# =============================================================== browser mode
+#
+# The other commands read a file and write a file, and the founder carries the
+# result into QuickBooks. These drive QuickBooks directly, in a browser the
+# founder is already signed in to, with the founder watching.
+#
+# Nothing in this file opens a connection. The agent does the clicking with its
+# own browser tools; these commands decide what it may attempt, hold the
+# approval it needs, and check afterwards that the books moved by exactly the
+# amount that was approved. `lib/closethebooks/browser.py` carries the rules and
+# the reason behind each one.
+
+BROWSER_FILE = "answers/browser.json"
+BROWSER_READS = "reports/browser-reads"
+
+# What a plan file for each kind is called, so a person reading `review/` can
+# tell a categorization batch from an entry batch without opening either.
+KIND_PREFIX = {"categorize": "c", "add": "g", "journal": "j"}
+
+
+def browser_state(work):
+    return read_json(work / BROWSER_FILE, {}) or {}
+
+
+def confirmed_company(work):
+    """The company this working directory was confirmed against, or ''."""
+    return str((browser_state(work).get("company") or {}).get("observed") or "")
+
+
+def require_company(work, prof=None):
+    """Refuse unless somebody has confirmed which company file this is."""
+    seen = confirmed_company(work)
+    if not seen:
+        raise Refusal(
+            "the company has not been confirmed, so nothing in browser mode "
+            "runs.\n"
+            "  QuickBooks keeps several companies behind one login and switches "
+            "between them from a menu, so the file on screen is a fact somebody "
+            "has to check rather than assume.\n"
+            "  Read the company name in the QuickBooks header and run:\n"
+            "      python3 bin/books.py browser confirm --company \"what it says\""
+        )
+    if prof is not None:
+        # Re-checked here as well as at confirm time, because a profile can be
+        # replaced between the two and the confirmation would then be about a
+        # company this directory is no longer for.
+        browser.confirm_company(seen, prof.entity.name)
+    return seen
+
+
+def browser_gate(work, prof=None):
+    """Everything that has to be true before any browser step. Refuses, loudly."""
+    seen = require_company(work, prof)
+    stop = browser.blocking(work.root)
+    if stop:
+        raise Refusal(stop)
+    return seen
+
+
+def plan_path(work, tag):
+    return work.dir("review", create=True) / f"batch-{tag}.json"
+
+
+def plan_markdown_path(work, tag):
+    return work.dir("review", create=True) / f"batch-{tag}.md"
+
+
+def load_plan(work, tag):
+    """Read a plan file back as a PostBatch, refusing a plan that was edited.
+
+    The approval covers the bytes of this file, so an edit voids it anyway. This
+    check fires earlier and says something more useful: the rows and the hash
+    inside the file disagree, which means it was changed by hand rather than
+    rebuilt.
+    """
+    p = plan_path(work, tag)
+    if not p.exists():
+        raise Refusal(
+            f"there is no plan for batch-{tag} at {work.rel(p)}.\n"
+            f"  Plans that exist: "
+            + (", ".join(f"batch-{t}" for t in known_plans(work)) or "none yet")
+            + "\n  Build them with `books.py browser plan --kind categorize`."
+        )
+    data = read_json(p, {}) or {}
+    try:
+        rows = [browser.PostRow(**r) for r in data.get("rows") or []]
+        batch = browser.PostBatch(
+            tag=data.get("tag") or tag, kind=data.get("kind") or "",
+            account=data.get("account") or "", rows=rows,
+            company=data.get("company") or "", counter=data.get("counter") or "",
+            built=data.get("built") or "", source=data.get("source") or "")
+    except TypeError as exc:
+        raise Refusal(
+            f"{work.rel(p)} is not a plan this version can read ({exc}). "
+            f"Rebuild it with `books.py browser plan`."
+        ) from exc
+    stated = str(data.get("row_hash") or "")
+    if stated and stated != batch.row_hash():
+        raise Refusal(
+            f"{work.rel(p)} carries rows that do not match the hash written into "
+            f"it, so it was edited by hand after it was built.\n"
+            "  A batch is the thing somebody approves. Editing one after the "
+            "fact means the approval and the rows are about different sets of "
+            "transactions, which is the exact failure this whole mechanism "
+            "exists to stop.\n"
+            "  Rebuild it: python3 bin/books.py browser plan --kind "
+            f"{batch.kind}"
+        )
+    return batch
+
+
+def known_plans(work):
+    review = work / "review"
+    if not review.is_dir():
+        return []
+    out = []
+    for p in sorted(review.glob("batch-*.json")):
+        tag = parse_batch_tag(p.name)
+        if tag:
+            out.append(tag)
+    return out
+
+
+def write_plan(work, batch):
+    p = plan_path(work, batch.tag)
+    p.write_text(batch.to_json(), encoding="utf-8")
+    md = plan_markdown_path(work, batch.tag)
+    md.write_text(batch.to_markdown(), encoding="utf-8")
+    return p, md
+
+
+# ---------------------------------------------------------- browser: help
+
+def cmd_browser_help(args, work):
+    """`books.py browser` with no step: the order, and what each step is for."""
+    head("Working inside QuickBooks, in your own browser")
+    say("  You are signed in. Your agent never sees a credential, never asks for "
+        "one, and never types one.")
+    say("  It proposes a batch, you approve that batch in your own terminal, and "
+        "only then can anything be posted.")
+    say("  After every batch it reads the count again and proves the books moved "
+        "by exactly what you approved.")
+    head("The steps")
+    for name, what in (
+            ("confirm", "say which company file is on screen. Nothing runs first"),
+            ("read", "record what a screen says: the queues, the tiles, the "
+                     "reconciliation summary, the rules, the audit log"),
+            ("plan", "build batches small enough to read, one approval each"),
+            ("post", "open a run for one approved batch and print its steps"),
+            ("verify", "prove the count moved by exactly the approved amount"),
+            ("clear", "retire a halt, with a note saying what caused it"),
+            ("runbook", "write a refused action out as steps you do by hand"),
+            ("status", "what is approved, what is open, what is halted")):
+        say(f"  {name:<9} {what}")
+    head("What is refused here, whatever anyone approves")
+    for act in sorted(browser.REFUSED.values(), key=lambda a: a.key):
+        say(f"  {act.label}")
+    say("")
+    say("  Each destroys a record that does not come back, so none of them is "
+        "gated. `books.py browser runbook <name>` writes out the order to work "
+        "one by hand.")
+    say("")
+    say("      python3 bin/books.py browser confirm --company \"the name the "
+        "header shows\"")
+    return OK
+
+
+# ------------------------------------------------------- browser: confirm
+
+def cmd_browser_confirm(args, work):
+    prof = load_profile(work, args.profile)
+    company = browser.confirm_company(
+        args.company, prof.entity.name, by=whoami(args.by),
+        file_id=args.file_id or "")
+    state = browser_state(work)
+    state["company"] = company.to_json()
+    state["confirmed_on"] = today_iso()
+    write_json(work / BROWSER_FILE, state)
+
+    head("Company confirmed")
+    bullet("on screen", company.observed)
+    bullet("in the profile", company.expected)
+    if company.file_id:
+        bullet("company file", company.file_id)
+    bullet("confirmed by", company.confirmed_by or "the owner")
+    bullet("at", company.confirmed_at)
+    say("")
+    say("Every read and every write from here checks this again. If the company "
+        "in the header changes, everything stops.")
+
+    head("You sign in, and that never changes")
+    say("  Your agent has no credential and cannot be given one. It works in a "
+        "browser you signed in to yourself.")
+    say("  If a QuickBooks page ever asks for a password mid-run, the session "
+        "ended. Sign in again in your own window. Nothing types it for you.")
+
+    head("What to read first")
+    for name in ("banking", "for-review", "reconcile-summary", "rules",
+                 "audit-log"):
+        s = browser.surface(name)
+        say(f"  {name}")
+        say_lines(_labelled("      answers: ", s.answers, 64))
+    say("")
+    say("      python3 bin/books.py browser read --surface banking --from "
+        "reports/browser-reads/banking.json")
+    return OK
+
+
+# ---------------------------------------------------------- browser: read
+
+def cmd_browser_read(args, work):
+    prof = load_profile(work, args.profile)
+    seen = require_company(work, prof)
+    payload = read_json(Path(args.source), None)
+    if payload is None:
+        raise Refusal(
+            f"there is no read at {args.source}.\n"
+            "  Read the screen with your browser tools, write what you read to a "
+            "JSON file, then point this at it. The file is the thing that gets "
+            "checked, and it stays on disk as the record of what the screen said "
+            "on the day."
+        )
+    claimed = str((payload or {}).get("company") or "").strip() if isinstance(payload, dict) else ""
+    if claimed:
+        browser.confirm_company(claimed, seen)
+
+    reader = browser.READERS.get(args.surface)
+    if reader is None:
+        raise Refusal(
+            f"{args.surface!r} is not a screen this reads. The five are: "
+            + ", ".join(sorted(browser.READERS)) + "."
+        )
+    result = reader(payload)
+
+    kept = work.dir(BROWSER_READS, create=True) / f"{args.surface}-{today_iso()}.json"
+    write_json(kept, payload)
+
+    live = load_live(work)
+    recorded = []
+
+    if args.surface == "for-review":
+        key = _account_key(prof, result.account)
+        queue_file = write_queue_export(work, prof, key, result)
+        gap = compare_to_last_read(work, key, result.total)
+        record_live(work, live, ("accounts", key, "for_review_count"),
+                    result.total, args.by)
+        recorded.append(f"{key}: " + n_of(result.total, result.total,
+                                          "items in For Review"))
+        head(f"For Review on {key}")
+        table([[p.filter, f"{p.rows:,}"] for p in result.parts] +
+              [["all filters, added", f"{result.total:,}"],
+               ["what the tab displayed", f"{result.displayed:,}"]],
+              ["filter", "rows"])
+        if result.undercount:
+            say("")
+            say(f"  The tab undercounts by {result.undercount:,}. "
+                + n_of(result.undercount, result.total, "rows")
+                + " are work that nobody scheduled, because the number people "
+                  "quote is the one on the tab.")
+            say("  The summed figure is what was recorded.")
+        if result.rows_read:
+            say("")
+            say("  " + n_of(result.rows_read, result.total, "rows were read off "
+                            "the grid") + ", so the read covers the queue.")
+        if queue_file is not None:
+            say("")
+            bullet("queue written to", work.rel(queue_file))
+            say("  " + n_of(len(result.rows), result.total, "rows are in that "
+                            "file") + ". Everything downstream reads it the same "
+                "way it reads an export, so nobody has to export the same queue "
+                "by hand after it has already been read.")
+        else:
+            say("")
+            say("  The read carried the count and not the rows, so the queue "
+                "itself still has to come from an export: Banking, the account, "
+                "For review, Export to Excel. `books.py browser plan` needs the "
+                "rows, not the number.")
+        if gap is not None and gap["unexplained"]:
+            head("Rows moved that nobody approved")
+            say_lines(["  " + line for line in
+                       browser.movement_text(gap).splitlines()])
+            drift = gap["unexplained"]
+            raise Failure(
+                n_of(abs(drift), abs(gap["moved"]) or abs(drift),
+                     f"rows that moved on {key} have no approval behind them")
+                + ".\n  Nothing else runs on this account until somebody has "
+                  "read the audit log and said what it was."
+            )
+
+    elif args.surface == "banking":
+        head("The account tiles")
+        rows = []
+        for tile in result:
+            key = _account_key(prof, tile["account"])
+            if tile["for_review"] is not None:
+                record_live(work, live, ("accounts", key, "for_review_count"),
+                            tile["for_review"], args.by)
+            if tile["feed_state"]:
+                record_live(work, live, ("accounts", key, "feed_state"),
+                            tile["feed_state"], args.by)
+            if tile["feed_last"]:
+                record_live(work, live, ("accounts", key, "feed_last"),
+                            tile["feed_last"], args.by)
+            if tile.get("bank_balance"):
+                record_live(work, live, ("accounts", key, "bank_balance"),
+                            tile["bank_balance"], args.by)
+                record_live(work, live, ("accounts", key, "bank_balance_source"),
+                            tile["bank_balance_source"], args.by)
+                if tile.get("bank_balance_as_of"):
+                    record_live(work, live,
+                                ("accounts", key, "bank_balance_as_of"),
+                                tile["bank_balance_as_of"], args.by)
+            recorded.append(f"{key}: the feed is {tile['feed_state'] or 'unread'}")
+            rows.append([key, tile["feed_state"] or "", tile["feed_last"] or "",
+                         "" if tile["for_review"] is None else f"{tile['for_review']:,}",
+                         tile.get("bank_balance", "")])
+        table(rows, ["account", "feed", "last update", "for review",
+                     "the bank's own balance"])
+        stopped = [t for t in result if t["feed_state"] == "stopped"]
+        if stopped:
+            say("")
+            say("  " + n_of(len(stopped), len(result), "feeds have stopped")
+                + ". A stopped feed is a hole in the books that no export shows, "
+                  "and the date it stopped decides which months need statements.")
+        blank = [t for t in result if not t.get("bank_balance")]
+        if blank:
+            say("")
+            say("  " + n_of(len(blank), len(result), "accounts have no balance "
+                            "from the bank's own site") + ". The tile shows what "
+                "the books think, which is the figure under test, so it does not "
+                "answer this.")
+
+    elif args.surface == "reconcile-summary":
+        head("Reconciled through")
+        never = [r for r in result if r["never"]]
+        for r in result:
+            if r["reconciled_through"]:
+                key = _account_key(prof, r["account"])
+                record_live(work, live, ("accounts", key, "reconciled_through"),
+                            r["reconciled_through"], args.by)
+                recorded.append(f"{key}: reconciled through "
+                                f"{r['reconciled_through']}")
+        table([[_account_key(prof, r["account"]),
+                r["reconciled_through"] or "never reconciled"] for r in result],
+              ["account", "through"])
+        say("")
+        say("  " + n_of(len(result) - len(never), len(result),
+                        "accounts have ever been reconciled") + ".")
+        say("  An item dated inside a reconciled month is a re-download. Booking "
+            "one counts it twice, and doubled figures are harder to find later "
+            "than a gap.")
+
+    elif args.surface == "rules":
+        record_live(work, live, ("rules", "count"), result["count"], args.by)
+        record_live(work, live, ("rules", "auto_add"), result["auto_add"], args.by)
+        recorded.append(f"{result['count']} bank rules, {result['auto_add']} of "
+                        f"them posting without being seen")
+        head("Bank rules")
+        bullet("rules", f"{result['count']:,}")
+        bullet("post by themselves", n_of(result["auto_add"], result["count"],
+                                          "rules"))
+        if result["auto_add"]:
+            say("")
+            say("  Turn those off before any figure is produced for the return. "
+                "A rule with auto-add on keeps posting into the year while the "
+                "year is being worked, so every hour worked before it stops is "
+                "worked twice.")
+            say("  Turning it off does not undo what it already posted. "
+                "`books.py browser read --surface audit-log` is how you find "
+                "that.")
+
+    elif args.surface == "audit-log":
+        record_live(work, live, ("people", "last_human_date"),
+                    result["last_human_date"], args.by)
+        if result["note"]:
+            record_live(work, live, ("people", "note"), result["note"], args.by)
+        recorded.append("a person last worked in the file on "
+                        + result["last_human_date"])
+        head("Who last worked in this file")
+        bullet("date", result["last_human_date"])
+        if result["by"]:
+            bullet("who", result["by"])
+        say("")
+        say("  Everything posted after that date arrived from a rule or a sync "
+            "rather than from a person. The audit history is the only place that "
+            "says whose entry something is, and a date never says it.")
+
+    head("Recorded")
+    for r in recorded:
+        say(f"  {r}")
+    say("")
+    bullet("stored in", work.rel(work / LIVE_FILE))
+    bullet("the read itself", work.rel(kept))
+    say("")
+    say("Each fact carries the date it was read. Every later command uses these "
+        "and says which of them it used.")
+
+    missing = intake_missing(prof, load_live(work))
+    if missing:
+        say("")
+        say(n_of(len(missing), len(missing), "live facts are still missing")
+            + ". `books.py intake` lists them, and browser mode can read most of "
+              "them off the screen.")
+    return OK
+
+
+def compare_to_last_read(work, key, total):
+    """Compare this queue read to the last one, and to what was approved between.
+
+    The count check inside a run proves that one batch did what it said. This
+    proves something the run cannot: that nothing ELSE happened to the queue
+    between two reads. It is the only check here that would notice an agent
+    working rows without asking, because clicking a row is not something a hook
+    can tell apart from clicking a filter.
+    """
+    counter = f"for-review:{key}"
+    state = browser_state(work)
+    marks = state.get("queue_reads") or {}
+    last = marks.get(str(key))
+    if not last or last.get("total") is None:
+        # The first read of an account has nothing to compare against, so it
+        # records every run already finished on this counter as accounted for.
+        # Otherwise the second read would attribute the whole of a previous
+        # session's work to the gap between these two reads.
+        done = [r.tag for r in browser.finished_runs(work.root, counter)]
+        save_read_mark(work, key, total, done)
+        return None
+    gap = browser.unexplained_movement(
+        work.root, counter, previous=last["total"], current=total,
+        counted=last.get("counted") or [])
+    save_read_mark(work, key, total, gap["counted"])
+    return gap
+
+
+def save_read_mark(work, key, total, counted=()):
+    state = browser_state(work)
+    state.setdefault("queue_reads", {})[str(key)] = {
+        "total": int(total),
+        "at": dt.datetime.now().astimezone().isoformat(timespec="seconds"),
+        "counted": sorted(str(t) for t in counted or ()),
+    }
+    write_json(work / BROWSER_FILE, state)
+
+
+def write_queue_export(work, prof, key, result):
+    """Write the rows a browser read carried into for-review/, or return None.
+
+    Same three columns a QuickBooks export has, and a filename carrying the
+    account's own mask so `account_for_file` places it the way it places an
+    export. That is deliberate: the rest of the kit should not be able to tell
+    which route a queue arrived by, and a row read off a screen that nobody
+    wrote down is a row nobody can check tomorrow.
+    """
+    if not result.rows:
+        return None
+    spec = prof.account_spec(key)
+    label = (spec.label if spec is not None else key) or key
+    safe = re.sub(r"[^A-Za-z0-9]+", "-", str(label)).strip("-").lower() or "account"
+    target = work.dir("for-review", create=True) / f"{safe}-browser-{today_iso()}.csv"
+    with open(target, "w", encoding="utf-8", newline="") as fh:
+        w = csv.writer(fh)
+        w.writerow(["Date", "Description", "Amount"])
+        for row in result.rows:
+            w.writerow([row["date"], row["description"], row["amount"]])
+    return target
+
+
+def _account_key(prof, given):
+    """The profile's own name for an account, given whatever the screen calls it.
+
+    Deliberately strict. A screen says "Northgate Checking 7742" where a profile
+    says "1010", so some translation is needed, and the translation is by exact
+    name or by the mask the label carries. It is not by resemblance: a fuzzy
+    match once turned "101000" into the account "1010", which would have
+    recorded a queue of 600 against the wrong account and left the right one
+    reading zero.
+
+    Where two accounts share a mask, that is the duplicated-account case, and
+    guessing between them is the one thing that must not happen there.
+    """
+    given_n = norm_text(given)
+    if not given_n:
+        raise Refusal("a read has to say which account it is for.")
+    specs = declared_accounts(prof)
+    for spec in specs:
+        if given_n in {norm_text(spec.book), norm_text(spec.label),
+                       norm_text(spec.mask)}:
+            return spec.book
+    hits = [s for s in specs if s.mask and norm_text(s.mask) in given_n.split()]
+    if len(hits) == 1:
+        return hits[0].book
+    if len(hits) > 1:
+        raise Refusal(
+            f"{given!r} matches {len(hits)} accounts by their last four digits: "
+            + ", ".join(s.book for s in hits) + ".\n"
+            "  That is what one real account looks like after a feed was "
+            "relinked and QuickBooks made a second one. Which of the two this "
+            "read belongs to decides whether a queue is work or a duplicate, so "
+            "it is not guessed here.\n"
+            "  Run `books.py merge-plan` first, or name the account exactly."
+        )
+    raise Refusal(
+        f"{given!r} is not an account in the profile, so a read cannot be "
+        f"recorded against it.\n"
+        "  Declared: " + (", ".join(s.book for s in specs) or "none") + "\n"
+        "  Use one of those names, or the label QuickBooks shows for it, or run "
+        "`books.py learn` again if the account is new."
+    )
+
+
+# ---------------------------------------------------------- browser: plan
+
+def cmd_browser_plan(args, work):
+    prof = load_profile(work, args.profile)
+    require_engagement(prof)
+    browser_gate(work, prof)
+    company = confirmed_company(work)
+    size = int(args.size or browser.DEFAULT_BATCH_ROWS)
+
+    if args.kind == "categorize":
+        batches, skipped, total = _plan_categorize(args, work, prof, company, size)
+    elif args.kind == "add":
+        batches, skipped, total = _plan_add(args, work, prof, company, size)
+    else:
+        batches, skipped, total = _plan_journal(args, work, prof, company, size)
+
+    if not batches:
+        raise Refusal(
+            n_of(0, total, "rows could be planned") + ".\n"
+            "  " + (skipped[0] if skipped else "There is nothing to do here, "
+                    "which may be the right answer.")
+        )
+
+    written = []
+    for b in batches:
+        p, md = write_plan(work, b)
+        written.append([f"batch-{b.tag}", b.account or "several", f"{len(b.rows):,}",
+                        work.rel(md)])
+
+    planned = sum(len(b.rows) for b in batches)
+    head(f"{args.kind}: {len(batches)} batches, {planned:,} rows")
+    table(written, ["batch", "account", "rows", "what you read"])
+    say("")
+    say(n_of(planned, total, "rows are planned")
+        + f", in batches of at most {size}.")
+    say(f"  {size} rows is about a screen and about two minutes of reading. A "
+        "batch big enough to scroll past is an approval of the scroll bar, and "
+        "these post into books that are live.")
+    for note in skipped:
+        say("")
+        say_lines(_labelled("  ", note, 74))
+
+    first = batches[0]
+    head("What happens next")
+    say(f"  1. Read {work.rel(plan_markdown_path(work, first.tag))}. Every row is "
+        "in it, with the reason on each.")
+    say("  2. If you agree with it, run this in your own terminal. Your agent "
+        "cannot run it:")
+    say(f"         python3 bin/books.py approve batch-{first.tag}")
+    say("  3. Then your agent reads the count on the screen and opens the run:")
+    say(f"         python3 bin/books.py browser post batch-{first.tag} --before N")
+    say("  4. It works the batch, reads the count again, and proves it:")
+    say(f"         python3 bin/books.py browser verify batch-{first.tag} --after N")
+    say("")
+    say("  Step 4 is the one that catches a rule firing underneath the work, a "
+        "stale page, and a double click. If the count is not exactly what was "
+        "approved, everything stops.")
+    return OK
+
+
+def _qbo_account(proposal):
+    """The account written the way QuickBooks wants it typed.
+
+    The interface matches on the number followed by the exact name, and a name
+    on its own is ambiguous the moment two accounts share one. The review
+    workbook shows the name because a person reads it; a batch that an agent
+    types into a field shows both.
+    """
+    num = (getattr(proposal, "account", "") or "").strip()
+    name = (getattr(proposal, "account_full", "") or "").strip()
+    if num and name and num != name:
+        return f"{num} {name}"
+    return name or num
+
+
+def _plan_categorize(args, work, prof, company, size):
+    """Batches from the For Review queue, one account at a time.
+
+    Rows carrying a rule with evidence behind them become batches. Everything
+    else stays a question, because a guess posted into live books is a guess
+    that is now the record.
+    """
+    live = load_live(work)
+    year = require_filing_year(live)
+    ledger = load_ledger(work, args.exports)
+    everything, _, _ = load_queue(work, args.for_review, prof, quiet=True)
+    if not everything:
+        raise Refusal("the For Review exports hold no transactions to work.")
+    scoped = analyze_scope(
+        everything, filing_year=year,
+        reconciled_through=reconciled_through_map(prof, live),
+        history_of=history_map(ledger, prof, everything))
+    lines = list(scoped.in_scope)
+    if not lines:
+        raise Refusal(
+            n_of(0, scoped.total, f"queue rows belong to the {year} return") + ".")
+
+    proposals = matching.classify(lines, ledger, prof,
+                                  window_days=args.window_days)
+    postable, parked = [], []
+    for p in proposals:
+        if p.action != "add" or not p.rule_id or p.needs_human:
+            parked.append(p)
+            continue
+        postable.append(p)
+
+    by_account = {}
+    for p in postable:
+        by_account.setdefault(p.line.account_key or "unassigned", []).append(p)
+
+    only = norm_text(args.account) if args.account else ""
+    batches = []
+    for i, key in enumerate(sorted(by_account), start=1):
+        if only and norm_text(key) != only:
+            continue
+        rows = [browser.PostRow(
+            ref=f"{iso(p.line.date)}-{p.line.source_row}",
+            date=iso(p.line.date),
+            descriptor=p.line.descriptor,
+            amount=fmt(p.line.amount),
+            account=_qbo_account(p),
+            klass=p.klass,
+            payee=p.matched_to or "",
+            why=p.source,
+            action="categorize",
+            needs_human=p.needs_human,
+        ) for p in sorted(by_account[key], key=lambda x: (x.line.date,
+                                                          x.line.source_row))]
+        batches.extend(browser.slice_batches(
+            rows, kind="categorize", account=key, size=size, company=company,
+            counter=f"for-review:{key}", prefix=f"c{i}_",
+            source=f"the For Review queue for {key}, scoped to {year}"))
+
+    skipped = []
+    classless = sum(1 for b in batches for r in b.rows if not r.klass)
+    if classless:
+        skipped.append(
+            n_of(classless, sum(len(b.rows) for b in batches), "planned rows carry "
+                 "no class") + ". None of the rules mined from your own history "
+            "sets one. If your books use classes, post nothing until that is "
+            "fixed: the Class column is off by default in the new grid, and a row "
+            "posted without it is written as 'Not specified', which is a defect "
+            "rather than a state. If your books do not use classes, this is "
+            "nothing.")
+    if parked:
+        questions = sum(1 for p in parked if p.action == "question")
+        matches = sum(1 for p in parked if p.action == "match")
+        transfers = sum(1 for p in parked if p.action == "transfer")
+        flagged = sum(1 for p in parked if p.needs_human)
+        guessed = sum(1 for p in parked
+                      if p.action == "add" and not p.rule_id and not p.needs_human)
+        skipped.append(
+            n_of(len(parked), len(proposals), "rows were left out of these "
+                 "batches") + f": {matches} already in the books, {transfers} "
+            f"transfers between your own accounts, {questions} questions, "
+            f"{guessed} where the account would be a guess, and {flagged} whose "
+            "bank description carries text aimed at an automated system. None of "
+            "those is a row an agent should click through in a live file. "
+            "`books.py catchup` puts them in a workbook, and `books.py questions` "
+            "turns the questions into a short list.")
+    return batches, skipped, len(proposals)
+
+
+def _plan_add(args, work, prof, company, size):
+    """Batches of transactions the statements show and the feed never delivered."""
+    ledger = load_ledger(work, args.exports)
+    parsed, _, _ = load_statements(work, args.statements, prof)
+    for s in parsed:
+        if s.tie_out is None:
+            s.check()
+    not_tying = [s for s in parsed if not s.ties]
+    if not_tying:
+        raise Refusal(
+            n_of(len(not_tying), len(parsed), "statements do not tie") + ".\n"
+            "  Adding transactions you have not proved complete moves the gap "
+            "into the books, where it is harder to see. Run `books.py tieout` "
+            "and work the differences first."
+        )
+    gaps = gap_months(ledger, prof, parsed, only_account=args.account)
+    if not gaps:
+        raise Refusal(
+            n_of(0, len(parsed), "statement months need adding")
+            + ": every month the statements cover already has transactions in "
+              "the books.")
+
+    batches, total = [], 0
+    for i, key in enumerate(sorted({a for a, _ in gaps}), start=1):
+        lines = []
+        for (acct, month), rows in sorted(gaps.items()):
+            if acct == key:
+                lines.extend(sorted(rows, key=lambda l: (l.date, l.source_row)))
+        total += len(lines)
+        proposals = matching.classify(lines, ledger, prof)
+        rows = [browser.PostRow(
+            ref=f"{iso(p.line.date)}-{p.line.source_row}",
+            date=iso(p.line.date),
+            descriptor=p.line.descriptor,
+            amount=fmt(p.line.amount),
+            account=_qbo_account(p),
+            klass=p.klass,
+            why=p.source or "the statement holds this row and the books do not",
+            action="add",
+            needs_human=p.needs_human,
+        ) for p in proposals]
+        batches.extend(browser.slice_batches(
+            rows, kind="add", account=key, size=size, company=company,
+            counter=f"register:{key}", prefix=f"g{i}_",
+            source="months your statements cover and your books do not"))
+    note = [
+        "Every one of these becomes a transaction that was not there before, so "
+        "the count on the register has to rise by exactly the number in the "
+        "batch. A rise of one more than that is the feed delivering the same "
+        "month at the same time, and the run halts on it."
+    ]
+    return batches, note, total
+
+
+def _plan_journal(args, work, prof, company, size):
+    """Batches of adjusting entries, typed into the journal form.
+
+    This is the one QuickBooks Online in the United States cannot import on any
+    plan, so before browser mode the only route was a person typing each entry
+    off a worksheet.
+    """
+    through = parse_date(args.through, field="--through")
+    since = parse_date(args.since, field="--since") if args.since else None
+    ledger = None
+    try:
+        ledger = load_ledger(work, args.exports)
+    except Refusal:
+        pass
+    resolve = resolver_for(ledger, prof)
+    live = load_live(work)
+    year = filing_year_of(live) or through.year
+    gate_automation(work, prof, ledger, live, year, "A journal entry batch")
+
+    drafts, missing = draft_entries(prof, through, since=since)
+    entries = [e for d in drafts for e in d]
+    questions = [q for d in drafts for q in d.questions]
+    if not entries:
+        raise Refusal(
+            n_of(0, 0, "entries were drafted") + ". Nothing is planned, which is "
+            "the honest outcome: an entry with no basis is an entry nobody can "
+            "defend."
+            + ("\n  " + n_of(len(questions), len(questions), "questions block "
+                             "one") + ". Run `books.py entries` to read them."
+               if questions else ""))
+
+    rows = []
+    for e in entries:
+        detail = []
+        for line in e.lines:
+            account, debit, credit, memo = (list(line) + ["", "", "", ""])[:4]
+            full = (resolve(account) if resolve else "") or ""
+            # The journal form matches on the number then the exact name, so
+            # both go in. A name alone is ambiguous the moment two accounts
+            # share one, and a number alone is unreadable to the person
+            # checking the batch.
+            named = f"{account} {full}".strip() if full and full != account \
+                else str(account)
+            side = f"debit {fmt(debit)}" if money(debit or 0) != ZERO else \
+                f"credit {fmt(credit)}"
+            detail.append(f"{named}: {side}" + (f", {memo}" if memo else ""))
+        rows.append(browser.PostRow(
+            ref=str(e.number or ""),
+            date=iso(e.date),
+            descriptor=e.memo or e.kind,
+            amount=fmt(e.total_debits()),
+            account=f"{len(e.lines)} lines",
+            why=e.basis or "",
+            action="journal",
+            detail=detail,
+        ))
+    batches = browser.slice_batches(
+        rows, kind="journal", account="", size=size, company=company,
+        counter="register:journal", prefix="j",
+        source=f"recurring entries through {iso(through)}")
+    note = []
+    if missing:
+        note.append(n_of(len(ENTRY_KINDS) - len(missing), len(ENTRY_KINDS),
+                         "kinds of recurring entry are set up") + ". Nothing was "
+                    "drafted for " + ", ".join(missing) + ".")
+    if questions:
+        note.append(n_of(len(questions), len(questions), "questions") + " block "
+                    "an entry that is not in these batches. `books.py entries` "
+                    "prints them.")
+    note.append(
+        "QuickBooks Online in the United States cannot import a journal entry on "
+        "any plan, which is why these were a worksheet to type before. The "
+        "journal form only mounts in a brand new tab, and in a tab that has "
+        "already loaded the report builder it fails silently with no error at "
+        "all.")
+    return batches, note, len(rows)
+
+
+# ---------------------------------------------------------- browser: post
+
+def require_quiet_file(work):
+    """Refuse to post while anything else is posting into the same file.
+
+    The count before and the count after are the whole proof that a batch did
+    what it was approved to do, and that proof rests on one assumption: nothing
+    else moved the count while the batch ran. A bank rule with auto-add on
+    breaks exactly that assumption, quietly, and the result is a halt on every
+    batch with no way to tell a rule from a mis-click.
+
+    So this is a refusal rather than a warning, and it comes before the first
+    click rather than after the count fails to add up.
+    """
+    live = load_live(work)
+    rules = live.get("rules") or {}
+    if rules.get("count") is None or rules.get("auto_add") is None:
+        raise Refusal(
+            "nobody has said how many bank rules are on, or how many of them "
+            "post without being seen.\n"
+            "  Posting here is checked by reading a count before and after, and "
+            "that check only means something if nothing else is posting at the "
+            "same time. A rule with auto-add on is something else posting.\n"
+            "  Read the gear, then Rules, and record it:\n"
+            "      python3 bin/books.py browser read --surface rules --from "
+            "reports/browser-reads/rules.json"
+        )
+    auto = int(rules.get("auto_add") or 0)
+    if auto > 0:
+        raise Refusal(
+            n_of(auto, int(rules.get("count") or auto), "bank rules post without "
+                 "being seen") + ", so nothing may be posted yet.\n"
+            "  Every batch here is proved by a count read before and after. A "
+            "rule firing underneath the work moves that count, which makes each "
+            "batch halt and makes a real mis-click indistinguishable from a rule "
+            "doing its job.\n"
+            "  In QuickBooks: the gear, then Rules. Turn off \"Automatically "
+            "confirm transactions this rule applies to\" on every rule. Export "
+            "them first, under Rules then Export rules, so you can put them "
+            "back.\n"
+            "  Then read the screen again and record what is left."
+        )
+    return rules
+
+
+def cmd_browser_post(args, work):
+    prof = load_profile(work, args.profile)
+    seen = browser_gate(work, prof)
+    tag = normalize_batch(args.batch)
+    batch = load_plan(work, tag)
+
+    # Approval first, because it is the refusal a person most needs to see, and
+    # then the quiet-file check, because a count proves nothing while a rule is
+    # posting underneath it.
+    ap = approval_check_batch(work.dir("review", create=True), tag)
+    require_quiet_file(work)
+    if batch.company:
+        browser.confirm_company(seen, batch.company)
+
+    run = browser.open_run(batch, before=args.before, approved_by=ap.approved_by,
+                           approved_at=ap.approved_at, company=seen)
+    path = browser.save_run(work.root, run)
+
+    head(f"batch-{tag} is open")
+    bullet("approved by", ap.approved_by)
+    bullet("approved at", ap.approved_at)
+    bullet("company", seen)
+    bullet("rows", f"{run.rows:,}")
+    bullet("counter", run.counter)
+    bullet("before", f"{int(run.before):,}")
+    bullet("expected after", f"{run.expected_after:,}")
+    bullet("run file", work.rel(path))
+
+    head("The steps, in order")
+    for i, step in enumerate(browser.steps_for(batch), start=1):
+        say_lines(_labelled(f"  {i}. ", step, 70))
+
+    s = browser.surface("for-review" if batch.kind == "categorize" else
+                        ("journal" if batch.kind == "journal" else "register"))
+    head("What this screen does that nothing warns you about")
+    for trap in s.traps:
+        say_lines(_labelled("  - ", trap, 70))
+
+    head("What is refused here, whatever anyone approves")
+    for act in sorted(browser.REFUSED.values(), key=lambda a: a.key):
+        say(f"  {act.label}")
+    say("")
+    say("  None of those is gated. There is no approval that makes them safe, "
+        "because each destroys a record that is not recoverable.")
+    say("  Where one of them is genuinely the right fix, "
+        "`books.py browser runbook <name>` writes the order to work it by hand, "
+        "and says what each step destroys.")
+
+    head("When the batch is done")
+    say(f"  Read {run.counter} again on a reloaded page with the filters clear, "
+        "then:")
+    say(f"      python3 bin/books.py browser verify batch-{tag} "
+        f"--after {run.expected_after}")
+    say("")
+    say("  Pass the number you actually read. If it is not "
+        f"{run.expected_after:,}, this halts and nothing else runs until somebody "
+        "has found out why.")
+    return OK
+
+
+def approval_check_batch(review_dir, tag):
+    """The approval gate, for an act that leaves no file behind."""
+    from closethebooks.approval import check_batch
+    return check_batch(review_dir, tag)
+
+
+# -------------------------------------------------------- browser: verify
+
+def cmd_browser_verify(args, work):
+    prof = load_profile(work, args.profile)
+    seen = require_company(work, prof)
+    tag = normalize_batch(args.batch)
+    run = browser.load_run(work.root, tag)
+    if run is None:
+        raise Refusal(
+            f"there is no run for batch-{tag}. Nothing was opened, so there is "
+            f"nothing to verify.\n"
+            f"  A batch is opened with `books.py browser post batch-{tag} "
+            f"--before N`, after you have approved it."
+        )
+    try:
+        run = browser.verify_run(run, args.after, company=seen)
+    except browser.BrowserError:
+        browser.save_run(work.root, run)
+        raise Failure(run.halt_reason or "the run halted.")
+    browser.save_run(work.root, run)
+
+    head(f"batch-{tag} verified")
+    bullet("counter", run.counter)
+    bullet("before", f"{int(run.before):,}")
+    bullet("after", f"{int(run.after):,}")
+    bullet("moved", f"{int(run.after) - int(run.before):+,}")
+    bullet("approved", f"{run.rows:,} rows")
+    say("")
+    say("  The count moved by exactly the number of rows you approved. That is "
+        "the whole claim, and it is the one that catches a rule firing "
+        "underneath the work.")
+
+    remaining = [t for t in known_plans(work)
+                 if (browser.load_run(work.root, t) or None) is None]
+    head("Next")
+    if remaining:
+        nxt = sorted(remaining)[0]
+        say(f"  {len(remaining)} batches have not been posted. The next one is "
+            f"batch-{nxt}.")
+        say(f"      python3 bin/books.py approve batch-{nxt}")
+    else:
+        say("  Every planned batch has been posted and verified.")
+        say("  Then: `books.py reconcile`, then `books.py check`, which measure "
+            "whether the work landed the way it was meant to.")
+    return OK
+
+
+# --------------------------------------------------------- browser: clear
+
+def cmd_browser_clear(args, work):
+    tag = normalize_batch(args.batch)
+    run = browser.clear_halt(work.root, tag, note=args.note, by=whoami(args.by))
+    head(f"batch-{tag} cleared")
+    bullet("note", args.note)
+    bullet("by", whoami(args.by))
+    say("")
+    say("  The note is on the run file, which is where anybody looking at this "
+        "later will go. A halt cleared with nothing written down is a halt that "
+        "happens again.")
+    stop = browser.blocking(work.root)
+    if stop:
+        say("")
+        say_lines(_labelled("  ", stop.splitlines()[0], 74))
+    return OK
+
+
+# ------------------------------------------------------- browser: runbook
+
+def cmd_browser_runbook(args, work):
+    prof = None
+    try:
+        prof = load_profile(work, args.profile)
+    except REFUSING_ERRORS:
+        pass
+    text = browser.runbook_markdown(
+        args.action, company=confirmed_company(work)
+        or (prof.entity.name if prof else ""), account=args.account or "")
+    out = write_text(work.dir("reports", create=True)
+                     / f"by-hand-{args.action}.md", text)
+    act = browser.REFUSED[args.action]
+    head(f"Refused, and written out for you: {act.label}")
+    say_lines(_labelled("  ", "It destroys " + act.destroys, 74))
+    say("")
+    bullet("runbook", work.rel(out))
+    say("")
+    say("  Your agent will not do this and no flag changes that. You do it, "
+        "because the cost of the wrong order is not recoverable.")
+    return OK
+
+
+# -------------------------------------------------------- browser: status
+
+def cmd_browser_status(args, work):
+    prof = None
+    try:
+        prof = load_profile(work, args.profile)
+    except REFUSING_ERRORS:
+        pass
+    seen = confirmed_company(work)
+    head("Browser mode")
+    bullet("company confirmed", seen or "no, and nothing runs until it is")
+    if prof is not None:
+        bullet("profile says", prof.entity.name)
+
+    plans = known_plans(work)
+    rows = []
+    for tag in plans:
+        ok, message = approval_state(work, tag)
+        run = browser.load_run(work.root, tag)
+        rows.append([f"batch-{tag}",
+                     "approved" if ok else "not approved",
+                     run.state if run else "not posted",
+                     "" if run is None or run.after is None
+                     else f"{int(run.before):,} to {int(run.after):,}"])
+    head("Batches")
+    if rows:
+        table(rows, ["batch", "approval", "run", "count"])
+    else:
+        say("  none planned yet")
+    say("")
+    say(n_of(sum(1 for r in rows if r[2] == "verified"), len(rows) or 0,
+             "batches are posted and verified"))
+
+    stop = browser.blocking(work.root)
+    if stop:
+        head("Nothing may be posted right now")
+        say_lines(_labelled("  ", stop.splitlines()[0], 74))
+        for line in stop.splitlines()[1:]:
+            say("  " + line.strip())
+        return FAILURE
+    return OK
+
+
 # ================================================================= scope
 
 def cmd_scope(args, work):
@@ -1687,6 +2743,21 @@ def cmd_completeness(args, work):
         queue_lines = []
     parsed, _, _ = load_statements(work, args.statements, prof, quiet=True,
                                    require=False, note_when_empty=False)
+    # The period the BOOK side of every figure below comes from. The bank side
+    # carries its own date, recorded when somebody read it off the screen.
+    ledger_period_end = None
+    for attr in ("period_end", "end", "last_activity"):
+        ledger_period_end = getattr(ledger, attr, None)
+        if ledger_period_end:
+            break
+    if ledger_period_end is None:
+        months = getattr(ledger, "months_with_activity", lambda: {})()
+        if months:
+            last = sorted(months)[-1]
+            y, m = (int(x) for x in last.split("-")[:2])
+            import calendar as _cal
+            ledger_period_end = dt.date(y, m, _cal.monthrange(y, m)[1])
+
     findings = analyze_completeness(prof, ledger, queue_lines, parsed, live,
                                     filing_year=year,
                                     materiality=materiality_of(prof))
@@ -1706,8 +2777,25 @@ def cmd_completeness(args, work):
                else "nobody has said"))
         if f.bank_source:
             say(f"                             {f.bank_source}")
-        if f.as_of:
-            say(f"      both as at             {iso(f.as_of)}")
+        # The two sides of this comparison are almost never as at the same
+        # moment. The book balance comes from an export with its own period end;
+        # the bank balance was read off a screen on whatever day somebody
+        # looked. Printing one date over both asserts something false about
+        # half the figures, and a false date is how a wrong number gets quoted
+        # to a preparer with confidence. State each side's own date, and say
+        # plainly when they differ, because the gap between them is itself
+        # activity nobody has accounted for.
+        book_as_of = getattr(f, "book_as_of", None) or ledger_period_end
+        bank_as_of = f.as_of
+        if book_as_of and bank_as_of and book_as_of != bank_as_of:
+            say(f"      books as at            {iso(book_as_of)}")
+            say(f"      bank as at             {iso(bank_as_of)}")
+            gap = (bank_as_of - book_as_of).days
+            if gap > 0:
+                say(f"      NOTE                   these are {gap:,} day(s) apart, so anything")
+                say(f"                             that moved between them is in neither figure")
+        elif bank_as_of:
+            say(f"      both as at             {iso(bank_as_of)}")
         say(f"      unbooked items         {f.queue_rows:,} rows netting {fmt(f.queue_net)}")
         if f.after is not None:
             say(f"      books plus the queue   {balance_words(f.after, f.kind)}")
@@ -2527,15 +3615,83 @@ def cmd_catchup(args, work):
 
 # =========================================================== approve
 
+
+def approve_browser_batch(args, work, tag):
+    """Approve a batch that will be clicked into live books rather than uploaded.
+
+    The difference from a workbook approval is what happens next, and it is
+    worth saying out loud in the output: there is no file to re-read before it
+    lands, and no upload step where somebody looks once more. The next thing
+    after this command is an agent working in the books.
+    """
+    batch = load_plan(work, tag)
+    ap = write_approval(work.dir("review", create=True), tag,
+                        approved_by=whoami(args.by), rows=len(batch.rows))
+
+    head(f"batch-{tag} approved")
+    bullet("what it does", {
+        "categorize": "sets the category, class and payee on rows in For Review, "
+                      "and accepts them",
+        "add": "adds transactions your statements show and your feed never "
+               "delivered",
+        "journal": "posts journal entries",
+    }[batch.kind])
+    bullet("account", batch.account or "several")
+    bullet("rows", f"{len(batch.rows):,}")
+    bullet("company", batch.company or "(none recorded)")
+    bullet("approved by", ap.approved_by)
+    bullet("at", ap.approved_at)
+    bullet("what you read", work.rel(plan_markdown_path(work, tag)))
+    flagged = [r for r in batch.rows if r.needs_human]
+    if flagged:
+        say("")
+        say("  " + n_of(len(flagged), len(batch.rows), "rows carry a description "
+                        "with text in it aimed at an automated system")
+            + ". Whoever sent the money chose that text, and it was quoted rather "
+              "than acted on.")
+
+    head("What you just did")
+    say("  You took responsibility for these rows reaching your books. That is "
+        "what an approval is, and it is why no agent can run this command.")
+    say("")
+    say("  This one is different from approving an import file. There is no "
+        "upload step after it, and no second look at a file before it lands. "
+        "The next thing that happens is your agent working in your books, in "
+        "front of you.")
+    say("")
+    say("  The approval covers these rows and nothing else. Rebuild the batch, "
+        "or change a row in it, and it stops covering anything until you look "
+        "again. It also covers only this batch: the next one gets its own.")
+
+    head("What happens next")
+    say("  Your agent reads the count on the screen, opens the run, and works "
+        "the rows:")
+    say(f"      python3 bin/books.py browser post batch-{tag} --before N")
+    say("")
+    say("  Then it reads the count again and proves it moved by exactly "
+        f"{len(batch.rows):,}:")
+    say(f"      python3 bin/books.py browser verify batch-{tag} --after N")
+    return OK
+
+
+
 def cmd_approve(args, work):
     tag = normalize_batch(args.batch)
     wb = batch_workbook(work, tag)
+    if not wb.exists() and plan_path(work, tag).exists():
+        # A browser batch is reviewed as a plan file rather than a workbook. The
+        # approval it produces is the same object, written the same way, and it
+        # goes stale the same way when the batch changes underneath it.
+        return approve_browser_batch(args, work, tag)
     if not wb.exists():
         raise Refusal(
-            f"there is no workbook for batch-{tag} at {wb}.\n"
+            f"there is no batch called batch-{tag}.\n"
             f"  Batches that exist: "
-            + (", ".join(f"batch-{t}" for t in known_batches(work)) or "none yet")
-            + "\n  Build them with `books.py catchup --batch-size 150`."
+            + (", ".join(f"batch-{t}" for t in
+                         sorted(set(known_batches(work)) | set(known_plans(work))))
+               or "none yet")
+            + "\n  Build them with `books.py catchup --batch-size 150`, or with\n"
+              "  `books.py browser plan --kind categorize` to work in the browser."
         )
     decisions = review_workbook.read_decisions(wb)
     bad = review_workbook.unrecognized(decisions)
@@ -5007,12 +6163,23 @@ the order a catch-up actually goes in:
   books.py ready      --out handoff/              refuses while anything stands
   books.py verify     handoff/evidence.json       before it goes anywhere
 
+or, in a browser they are signed in to, with them watching:
+
+  books.py browser confirm --company "..."         which company file is on screen
+  books.py browser read --surface for-review --from read.json
+  books.py browser plan --kind categorize          batches of 25, one approval each
+  books.py approve batch-c1_01                     THEM, in their own terminal
+  books.py browser post batch-c1_01 --before 600   opens the run, prints the steps
+  books.py browser verify batch-c1_01 --after 575  proves the books moved by 25
+  books.py browser runbook disconnect              a refused action, for them to do
+  books.py browser status                          approved, open, halted
+
 exit codes:
   0  it ran and everything it checked passed
   1  it ran and something is wrong: a check failed, or a file would not read
   2  it refused, because something it needs is missing or a batch is not approved
 
-four refusals you cannot pass with a flag:
+the refusals, none of which takes a flag:
 
   merge-plan       refuses while the account has anything in its For Review
                    queue, because disconnecting deletes it and nothing else
@@ -5026,9 +6193,22 @@ four refusals you cannot pass with a flag:
                    have to ask for has nothing recorded against it. Where you
                    cannot answer one, `--cannot "why"` records that you could
                    not, which is a record. A blank is not
+  browser post     refuses without an approval for that exact batch, without a
+                   confirmed company, while another run is open, while any halt
+                   stands, and while any bank rule still posts by itself
+  browser verify   halts when the count in the books did not move by exactly
+                   the number of rows approved, and a halt stops every batch
+  browser          refuses six actions outright, whatever anyone approves:
+                   disconnecting a feed, merging accounts, excluding
+                   transactions, deleting, voiding, undoing a reconciliation
 
 Nothing here connects to QuickBooks. Every file that reaches import/ is one a
 person approved, and it becomes a transaction only when they upload it.
+
+Browser mode is the exception, and it is the one to read about before using:
+the agent works in a window the owner signed in to, so what it posts reaches
+their books directly. It never sees a credential, it posts only rows inside an
+approved batch, and it reads the count before and after to prove it.
 """
 
 
@@ -5204,6 +6384,96 @@ def build_parser():
     s.add_argument("--for-review", metavar="DIR",
                    help="the folder of For Review exports (default: for-review/)")
     s.set_defaults(fn=cmd_merge_plan)
+
+    b = sub.add_parser(
+        "browser", parents=[parent],
+        help="work inside QuickBooks in your own browser, with your approval")
+    bsub = b.add_subparsers(dest="browser_command", metavar="STEP")
+    b.set_defaults(fn=cmd_browser_help, browser_parser=b)
+
+    s = bsub.add_parser("confirm", parents=[parent],
+                        help="say which company file is on screen, before anything else")
+    add_profile(s)
+    s.add_argument("--company", required=True, metavar="NAME",
+                   help="the company name exactly as the QuickBooks header shows it")
+    s.add_argument("--file-id", metavar="ID",
+                   help="the company file id from the address bar, if you can read it")
+    s.add_argument("--by", metavar="NAME", help="who confirmed it")
+    s.set_defaults(fn=cmd_browser_confirm)
+
+    s = bsub.add_parser("read", parents=[parent],
+                        help="record what a QuickBooks screen says, and check the shape "
+                             "of the read")
+    add_profile(s)
+    s.add_argument("--surface", required=True,
+                   choices=sorted(browser.READERS),
+                   help="which screen was read")
+    s.add_argument("--from", dest="source", required=True, metavar="PATH",
+                   help="the JSON file holding what was read")
+    s.add_argument("--by", metavar="NAME", help="who read it")
+    s.set_defaults(fn=cmd_browser_read)
+
+    s = bsub.add_parser("plan", parents=[parent],
+                        help="build batches small enough to read, one approval each")
+    add_profile(s)
+    add_exports(s)
+    add_statements(s)
+    s.add_argument("--kind", required=True, choices=browser.KINDS,
+                   help="categorize a For Review queue, add what the feed missed, "
+                        "or post journal entries")
+    s.add_argument("--account", metavar="KEY", help="just one account")
+    s.add_argument("--size", type=int, default=browser.DEFAULT_BATCH_ROWS,
+                   metavar="N",
+                   help=f"rows per batch (default: {browser.DEFAULT_BATCH_ROWS}). "
+                        f"This posts into live books, so a batch is what a person "
+                        f"actually reads")
+    s.add_argument("--for-review", metavar="DIR",
+                   help="the folder of For Review exports (default: for-review/)")
+    s.add_argument("--window-days", type=int, default=5, metavar="N",
+                   help="days either side to look for an entry already in the books "
+                        "(default: 5)")
+    s.add_argument("--through", metavar="DATE",
+                   help="for --kind journal: the last month to draft")
+    s.add_argument("--since", metavar="DATE", help="for --kind journal: skip months "
+                                                   "already posted")
+    s.set_defaults(fn=cmd_browser_plan)
+
+    s = bsub.add_parser("post", parents=[parent],
+                        help="open a run for one approved batch and print its steps")
+    add_profile(s)
+    s.add_argument("batch", metavar="BATCH", help="for example batch-c1_01")
+    s.add_argument("--before", required=True, type=int, metavar="N",
+                   help="the count you read on the screen before anything was clicked")
+    s.set_defaults(fn=cmd_browser_post)
+
+    s = bsub.add_parser("verify", parents=[parent],
+                        help="prove the books moved by exactly what was approved")
+    add_profile(s)
+    s.add_argument("batch", metavar="BATCH", help="for example batch-c1_01")
+    s.add_argument("--after", required=True, type=int, metavar="N",
+                   help="the count you read after the batch, on a reloaded page")
+    s.set_defaults(fn=cmd_browser_verify)
+
+    s = bsub.add_parser("clear", parents=[parent],
+                        help="THE HUMAN-ONLY COMMAND: retire a halt, with what caused it")
+    s.add_argument("batch", metavar="BATCH", help="the batch that halted")
+    s.add_argument("--note", required=True, metavar="TEXT",
+                   help="what the difference turned out to be")
+    s.add_argument("--by", metavar="NAME", help="who found it")
+    s.set_defaults(fn=cmd_browser_clear)
+
+    s = bsub.add_parser("runbook", parents=[parent],
+                        help="write out a refused action as steps for you to do by hand")
+    add_profile(s)
+    s.add_argument("action", metavar="ACTION", choices=sorted(browser.REFUSED),
+                   help="one of: " + ", ".join(sorted(browser.REFUSED)))
+    s.add_argument("--account", metavar="KEY", help="which account it concerns")
+    s.set_defaults(fn=cmd_browser_runbook)
+
+    s = bsub.add_parser("status", parents=[parent],
+                        help="what is approved, what is open, and what is halted")
+    add_profile(s)
+    s.set_defaults(fn=cmd_browser_status)
 
     s = sub.add_parser("catchup", parents=[parent],
                        help="work the For Review backlog into batches the owner can read")

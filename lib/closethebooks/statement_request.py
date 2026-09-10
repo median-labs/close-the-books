@@ -393,10 +393,26 @@ def build(ledger, profile, *, coverage_grid=None, recon=None, statements_dir="",
                         "issues a statement for a subtotal"))
             continue
         if not is_real_account(ledger, account):
-            request.excluded.append(
-                (label, "nothing has ever been posted to it and it carries no balance, "
-                        "so there is no account at an institution behind it"))
-            continue
+            # An account that never posted is usually a template row somebody
+            # left in the chart. It is NOT that when its feed has been broken,
+            # because a broken feed is a reason nothing posted. On one real
+            # file, two accounts had been erroring since April 2025 and sat at
+            # zero, reconciled clean, with no statement ever asked for. A zero
+            # balance is not evidence of no activity when nothing could have
+            # arrived to change it. Ask, and let the statement settle it.
+            if spec and (getattr(spec, "feed_is_dead", False)
+                         or str(getattr(spec, "feed", "")).lower() in ("dead", "error", "broken")):
+                request.notes.append(
+                    f"{label} has never posted and carries no balance, which normally means "
+                    f"there is no account behind it. Its feed is broken, so that inference "
+                    f"does not hold here: nothing could have arrived to post. Its statement "
+                    f"is requested so the silence can be confirmed rather than assumed."
+                )
+            else:
+                request.excluded.append(
+                    (label, "nothing has ever been posted to it and it carries no balance, "
+                            "so there is no account at an institution behind it"))
+                continue
 
         spec = specs.get(account.key)
         kind = "card" if (account.role == "card" or account.type == "credit card") else "bank"

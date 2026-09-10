@@ -131,7 +131,8 @@ FORBIDDEN_NAMES = {
 }
 
 SKIP_DIRS = {".git", "__pycache__", ".pytest_cache", "node_modules", ".venv"}
-TEXT_SUFFIXES = {".py", ".md", ".json", ".txt", ".yml", ".yaml", ".csv", ".toml", ".cfg", ".sh", ""}
+TEXT_SUFFIXES = {".py", ".md", ".json", ".txt", ".yml", ".yaml", ".csv", ".toml",
+                 ".cfg", ".sh", ".html", ""}
 
 MONEY_TOKEN = re.compile(r"\d[\d,]*\.\d{2}")
 INT_TOKEN = re.compile(r"(?<![\d.,])\d{3,}(?![\d.,])")

@@ -1,4 +1,4 @@
-# The seventeen skills
+# The eighteen skills
 
 Each is a folder under [`skills/`](skills/) holding one `SKILL.md`, and each
 stands on its own. You can reach for `reconcile` on books that are otherwise
@@ -9,6 +9,19 @@ runs, which is not alphabetical and does matter.
 
 If your agent cannot load skills, [`PLAYBOOK.md`](PLAYBOOK.md) carries the same
 procedure in one file.
+
+## Two ways to run, and one of them is newer
+
+The kit was built to read exports and write files the owner uploads themselves.
+That still works and nothing about it changed.
+
+[`work-in-the-browser`](skills/work-in-the-browser/SKILL.md) does the same work
+inside QuickBooks, in a browser the owner is already signed in to, one approved
+batch of 25 rows at a time, with the count in the books read before and after
+every batch. It needs an agent with browser control and the owner's own session.
+Where either is missing, the file path is the path.
+
+Read that skill before using it. Most of it is about what it refuses to do.
 
 ## Before any work starts
 
@@ -38,10 +51,11 @@ the cost to the end, where a wrong answer is expensive.
 | 14 | [`check-before-filing`](skills/check-before-filing/SKILL.md) | Packages the books with the evidence for every figure: evidence ledger, change log, exit tests, archive | The last step before the books leave the company |
 | 15 | [`ready-to-file`](skills/ready-to-file/SKILL.md) | Works out what the firm filing the return still has to be given, collects it, and refuses to call the books ready while anything is unrecorded | The terminus. Finished bookkeeping and a return that can be signed are different states |
 
-## The two that come up on their own
+## The three that come up on their own
 
 | Skill | What it does | Reach for it when |
 |---|---|---|
+| [`work-in-the-browser`](skills/work-in-the-browser/SKILL.md) | Does the categorizing, the missing transactions and the journal entries inside QuickBooks itself, in the owner's own browser, one approved batch at a time, checking the count in the books before and after each one | The owner runs an agent with browser access and would rather have the work done in their books than handed to them as files. It is also the only route that posts a journal entry, because QuickBooks Online in the United States cannot import one |
 | [`book-a-safe`](skills/book-a-safe/SKILL.md) | Works out where a convertible instrument belongs on the balance sheet and drafts the reclassification if it is in the wrong place | An instrument sits in equity, a raise is not booked, or a return, audit or diligence is coming |
 | [`wind-down`](skills/wind-down/SKILL.md) | Drafts the closing entries for a dissolution, and refuses until the facts they rest on are answered | A company is shutting down and its final books and final return have to be right |
 
@@ -70,19 +84,28 @@ in the United States cannot import journal entries.
 `check-before-filing` is what makes that evidence checkable by someone who was
 not here.
 
+`work-in-the-browser` sits across the middle of that sequence rather than at a
+point in it. It reads what `read-the-screen` would otherwise have to ask for,
+and it is the posting half of `catch-up`, `fill-feed-gaps` and
+`post-recurring-entries` where the owner would rather not handle files. The
+deciding, the evidence and the refusals are the same either way. What changes is
+who does the clicking.
+
 `ready-to-file` is the last one, and it asks a different question from all the
 others: whether the firm that will file the return has everything it needs.
 Its collecting half can start as soon as `learn-my-books` has run, because the
 questions come out of the chart. Its gate half runs at the end and refuses while
 anything a preparer would have to ask for has nothing recorded against it.
 
-## The four refusals
+## The refusals
 
 These are gates rather than advice. Each names the reason it fired and the
 command that clears it, and none of them takes a flag.
 
 | Refusal | Why it is not a warning |
 |---|---|
+| In browser mode, six actions that destroy records: disconnecting a feed, merging accounts, excluding transactions, deleting, voiding, and undoing a reconciliation | None of them is gated, because there is no approval that makes them recoverable. Each one is written out instead as an ordered runbook for the owner to work by hand, saying what every step destroys |
+| In browser mode, any batch whose count in the books did not move by exactly the number of rows approved | A count that moved by one more is a rule firing underneath the work, a double click, or a batch posted twice, and a small difference is what nobody notices. Everything stops until a person has found out which |
 | Nothing about disconnecting or merging an account while its For Review queue holds anything | Disconnecting deletes those items, and on an account whose activity was never booked they are the only record of it in the file |
 | The queue cannot be called finished while a completeness finding is open | Finishing the queue and the period being complete are different things, and the difference is invisible without the check |
 | Nothing that produces figures for a return while rules are still posting into the year being filed | A figure about a file that is still changing is a figure about a moment that has passed |

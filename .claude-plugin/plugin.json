@@ -1,7 +1,7 @@
 {
   "name": "close-the-books",
   "version": "0.1.0",
-  "description": "Catch up and close a QuickBooks Online year with your own AI agent. Reads your exports, writes import files you review and upload yourself. Nothing posts without you.",
+  "description": "Catch up and close a QuickBooks Online year with your own AI agent. Reads your exports, and either writes import files you upload yourself or works inside QuickBooks in your own signed-in browser, 25 approved rows at a time. Nothing posts without you approving that batch.",
   "author": {
     "name": "Median Labs Inc.",
     "url": "https://medianfi.com"

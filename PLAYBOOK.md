@@ -19,17 +19,38 @@ as a journal entry must not be added a second time, and that a checking account
 showing a negative balance is a symptom rather than a fact. You do the reading
 and the arithmetic; they make the decisions, because the decisions are theirs.
 
-**Nothing here connects to QuickBooks.** You read files they exported and write
-files they review and upload themselves. That is the whole security model and it
-is not negotiable.
+**On the file path, nothing here connects to QuickBooks.** You read files they
+exported and write files they review and upload themselves.
+
+**There is a second path, and it does reach their books.** If they run an agent
+with browser control and they are signed in to QuickBooks themselves, browser
+mode does the work in that window: categorizing rows in For Review, adding what
+a dead feed never delivered, and typing the adjusting entries. That path is in
+[`skills/work-in-the-browser/SKILL.md`](skills/work-in-the-browser/SKILL.md),
+and it has its own rules, which are stricter rather than looser. Twenty five
+rows to an approval, a count read before and after every batch, and six actions
+refused outright. If you are working from this playbook in a chat window with no
+browser, that path does not exist for you and everything below is the path.
 
 ## 2. The rules that never bend
 
 **Nothing reaches their books without them.** You propose. They run
-`books.py approve` in their own terminal, and they upload the file into
-QuickBooks. If they ask you to approve for them, say no and say why: an approval
-an agent can produce records nothing. There is no flag, no override, and no
-"just this once".
+`books.py approve` in their own terminal, and then either they upload the file
+into QuickBooks or, in browser mode, you post that one approved batch and
+nothing else. If they ask you to approve for them, say no and say why: an
+approval an agent can produce records nothing. There is no flag, no override,
+and no "just this once".
+
+**In browser mode, you never see a credential.** They sign in. You do not ask
+for a password, offer to store one, or type one, and a QuickBooks page asking
+for one mid-run means their session ended rather than that you should supply it.
+Say so and wait.
+
+**In browser mode, prove every batch with a count.** Read the count before, work
+the batch, read the count again. If the books did not move by exactly the number
+of rows they approved, stop, and stop the batches after it too. A queue that
+fell by twenty six when twenty five were approved has something else posting
+into it, and the next batch would land on top of that.
 
 **Never guess an account or a class.** Every categorization carries a rule with
 evidence, or it becomes a question. "Not specified" is a defect, not a state. A
@@ -235,11 +256,27 @@ Five facts, and no QuickBooks export carries any of them:
 | Reconciled through | Transactions, Reconcile, History by account | Which queue items are re-downloads of months already booked |
 | The rules | the gear, then Rules | Whether anything is still posting into the year being filed |
 
-Do not try to drive a browser for these. The owner is already logged in, and
-they can read five numbers off a screen faster than any scraper. Where
-QuickBooks can export the thing, ask for the export: the For Review list per
-account, and the rules file, are both better than a count, because a count
-cannot be checked afterwards.
+Where you can drive a browser and they are signed in, read four of these five
+off the screen yourself and skip the asking:
+
+```
+python3 bin/books.py browser confirm --company "the name their header shows"
+python3 bin/books.py browser read --surface banking --from reports/browser-reads/banking.json
+```
+
+Each read is checked before it is believed. A read of the For Review grid that
+comes back with about 34 rows is refused, because that is the size of the
+visible window in a virtualized grid rather than the size of the queue.
+
+Where you cannot, ask, because they are already logged in and can read five
+numbers off a screen faster than any scraper. Either way, where QuickBooks can
+export the thing, ask for the export: the For Review list per account, and the
+rules file, are both better than a count, because a count cannot be checked
+afterwards.
+
+The bank's own balance is the one that never comes off a QuickBooks screen. The
+tile shows what the books think the account holds, which is the figure being
+tested.
 
 ### Step 4: stop anything that is still posting
 
@@ -456,6 +493,23 @@ python3 bin/books.py approve batch-01
 
 That command is the moment a person takes responsibility. You cannot run it.
 
+**In browser mode, the same batch, smaller.** `books.py browser plan --kind
+categorize` cuts the same rows into batches of twenty five and writes each one
+out as a page they read. They approve each batch on its own, and each approval
+covers those rows and no others.
+
+```
+python3 bin/books.py browser plan --kind categorize
+python3 bin/books.py approve batch-c1_01            # they run this
+python3 bin/books.py browser post batch-c1_01 --before 600
+python3 bin/books.py browser verify batch-c1_01 --after 575
+```
+
+`post` refuses until that batch is approved, until the company on screen has
+been confirmed, and while any bank rule still posts by itself. `verify` halts if
+the count is not exactly what the approval predicted, and a halt stops every
+batch rather than only its own.
+
 ### Step 12: build the import files
 
 ```
@@ -480,6 +534,12 @@ Writes `import/bank-<account>-partNN-batch-gaps.csv` from the statements, three
 columns, split to the 1,000-row and 350 KB per-file limits. Without `--account`
 it fills the feeds the profile marks as dead.
 
+In browser mode the same months go in as `books.py browser plan --kind add`,
+which builds them into approvable batches of twenty five and posts them into the
+register instead of writing a file. It refuses while any statement does not tie,
+because adding rows you have not proved complete moves the gap into the books
+where it is harder to see.
+
 These files are written straight into `import/` without going through a review
 batch, so the approval gate that covers `catchup` does not cover them. Read the
 row counts back to the owner before they upload, and have them check the count
@@ -494,6 +554,12 @@ upload is much harder to unpick than a gap. Re-run `tieout` afterwards.
 ```
 python3 bin/books.py entries --profile profiles/mine.local.json --through 2025-12-31
 ```
+
+In browser mode, `books.py browser plan --kind journal --through 2025-12-31`
+turns the same entries into approvable batches and types them into the journal
+form. This is the one place browser mode does something the file path cannot do
+at all: QuickBooks Online in the United States cannot import a journal entry on
+any plan, so the alternative is a person typing every one of them.
 
 These are the entries most likely to have stopped when a bookkeeper left,
 because nothing prompts them. The command drafts prepaid amortization and

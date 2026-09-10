@@ -15,6 +15,22 @@ Three locks, deliberately redundant, because each fails differently.
 
 Lock 3 is the real one. Locks 1 and 2 exist so that a mistake is caught before
 it reaches a file you might upload without re-reading.
+
+WHEN THERE IS NO FILE: BROWSER MODE
+
+Browser mode has no import file. An agent working in your own signed-in
+QuickBooks session clicks a row and the row is posted, so lock 3 is gone and
+the approval has to gate the act rather than the artifact.
+
+Two things change and nothing else does. `workbook_path` also finds a `.json`
+plan, because a browser batch is written out as a plan file and a markdown page
+rather than a workbook, and `check_batch` asks the same question about a batch
+name with no path attached. The rules are the ones above: a batch is named, its
+rows are written where you can read them, you run `approve` yourself, and
+editing the batch afterwards voids the approval.
+
+`hooks/browser-write-gate.py` is lock 2 for this mode. There is no lock 3.
+Read the honesty note in that file before relying on this.
 """
 
 from __future__ import annotations
@@ -67,12 +83,13 @@ def workbook_hash(path) -> str:
     invalidate an approval. Falls back to hashing the whole file, which is
     stricter and never wrong, only more annoying.
     """
-    try:
-        from . import review_workbook  # imported lazily: optional at gate time
-        if hasattr(review_workbook, "row_hash"):
-            return review_workbook.row_hash(path)
-    except Exception:
-        pass
+    if str(path).lower().endswith(".xlsx"):
+        try:
+            from . import review_workbook  # imported lazily: optional at gate time
+            if hasattr(review_workbook, "row_hash"):
+                return review_workbook.row_hash(path)
+        except Exception:
+            pass
     h = hashlib.sha256()
     with open(path, "rb") as fh:
         for chunk in iter(lambda: fh.read(65536), b""):
@@ -85,12 +102,21 @@ def approval_path(review_dir, batch: str) -> Path:
 
 
 def workbook_path(review_dir, batch: str) -> Path:
-    p = Path(review_dir) / f"batch-{batch}.xlsx"
-    if p.exists():
-        return p
-    for cand in sorted(Path(review_dir).glob(f"*batch-{batch}*.xlsx")):
-        return cand
-    return p
+    """The artifact a batch was approved against.
+
+    An import batch is reviewed as a workbook and a browser batch is reviewed as
+    a plan file, so both suffixes are looked for. The order matters only when a
+    batch somehow has both, and then the workbook wins because that is the older
+    shape and the one every existing approval was written against.
+    """
+    for suffix in (".xlsx", ".json"):
+        p = Path(review_dir) / f"batch-{batch}{suffix}"
+        if p.exists():
+            return p
+    for suffix in (".xlsx", ".json"):
+        for cand in sorted(Path(review_dir).glob(f"*batch-{batch}*{suffix}")):
+            return cand
+    return Path(review_dir) / f"batch-{batch}.xlsx"
 
 
 def find_workdir(path) -> Path | None:
@@ -186,6 +212,52 @@ def check(target_path, workdir=None) -> Approval:
             f"batch {batch} was approved at {ap.approved_at}, but {ap.workbook} has "
             f"changed since. That approval is stale and does not cover the current "
             f"decisions. Re-run:\n"
+            f"    python3 bin/books.py approve batch-{batch}"
+        )
+    return ap
+
+
+def check_batch(review_dir, batch: str) -> Approval:
+    """Raise unless `batch` is approved right now. For acts with no file.
+
+    `check` asks whether writing a path is allowed. This asks the same question
+    about a batch name, because a browser write produces no file: the act is
+    clicking a row in somebody's live books, and there is nothing on disk
+    afterwards to have gated.
+
+    Same three failure modes, same wording, because a person hitting one of
+    these should not have to work out which mode they were in.
+    """
+    batch = str(batch or "").strip().lower()
+    if not batch:
+        raise ApprovalError("no batch was named, so there is nothing to check.")
+    review_dir = Path(review_dir)
+    ap = read_approval(review_dir, batch)
+    plan = workbook_path(review_dir, batch)
+    if ap is None:
+        # Name the page a person reads, not the machine-readable twin beside it.
+        readable = plan.with_suffix(".md")
+        raise ApprovalError(
+            f"batch-{batch} has not been approved, so nothing may be posted for "
+            f"it.\n"
+            f"  Read {readable if readable.exists() else plan}, and if you agree "
+            f"with it run this in your own terminal:\n"
+            f"    python3 bin/books.py approve batch-{batch}"
+        )
+    artifact = review_dir / ap.workbook
+    if not artifact.exists():
+        raise ApprovalError(
+            f"batch-{batch} was approved against {ap.workbook}, which is no "
+            f"longer there. Nothing can be posted against an approval whose "
+            f"rows cannot be read back. Rebuild the batch and approve it again."
+        )
+    if workbook_hash(artifact) != ap.row_hash:
+        raise ApprovalError(
+            f"batch-{batch} was approved at {ap.approved_at}, and {ap.workbook} "
+            f"has changed since.\n"
+            f"  That approval covers the rows as they were, not the rows as they "
+            f"are, and the difference is exactly what nobody would notice.\n"
+            f"  Read it again, then:\n"
             f"    python3 bin/books.py approve batch-{batch}"
         )
     return ap

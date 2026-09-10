@@ -10,6 +10,16 @@
             "timeout": 15
           }
         ]
+      },
+      {
+        "matcher": "Write|Edit|MultiEdit|NotebookEdit|Bash|mcp__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/browser-write-gate.py\"",
+            "timeout": 15
+          }
+        ]
       }
     ]
   }
