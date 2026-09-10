@@ -1,0 +1,38 @@
+account_key,name,type,role,signed,natural
+1010,Northgate Checking 7742,Bank,bank,314915.44,314915.44
+1020,Northgate Savings 7809,Bank,bank,45090.09,45090.09
+1100,Accounts Receivable,Accounts Receivable (A/R),ar,360519.00,360519.00
+1200,Paylane Clearing,Other Current Assets,clearing,-232441.76,-232441.76
+1300,Prepaid Insurance,Other Current Assets,prepaid,7200.00,7200.00
+1310,Prepaid Software,Other Current Assets,prepaid,4800.00,4800.00
+1500,Machinery and Equipment,Fixed Assets,other,48000.00,48000.00
+1510,Accumulated Depreciation,Fixed Assets,other,-10400.00,-10400.00
+1600,Intangible Assets - Design License,Other Assets,intangible,60000.00,60000.00
+1610,Accumulated Amortization - Design License,Other Assets,amortization,-7000.00,-7000.00
+2010,Accounts Payable,Accounts Payable (A/P),ap,-93014.02,93014.02
+2100,Vantage Card 3391,Credit Card,card,41385.93,-41385.93
+Vantage Credit Card 3391,Vantage Credit Card 3391,Credit Card,card,-32402.91,32402.91
+3000,Common Stock,Equity,equity,-1000.00,1000.00
+3100,Additional Paid-In Capital,Equity,equity,-24000.00,24000.00
+3200,Opening Balance Equity,Equity,obe,4182.65,-4182.65
+3300,SAFE - Simple Agreement for Future Equity,Equity,safe,-750000.00,750000.00
+3900,Retained Earnings,Equity,equity,0.00,0.00
+4000,Product Revenue,Income,revenue,-833608.57,833608.57
+4100,Service Revenue,Income,revenue,-113750.00,113750.00
+4900,Interest Income,Other Income,revenue,-90.09,90.09
+5000,Cost of Goods Sold - Components,Cost of Goods Sold,expense,201723.18,201723.18
+5100,Shipping and Freight,Cost of Goods Sold,expense,28921.50,28921.50
+6000,Salaries and Wages,Expenses,expense,613900.00,613900.00
+6010,Payroll Taxes,Expenses,expense,46963.34,46963.34
+6100,Contract Engineering,Expenses,expense,104285.66,104285.66
+6200,Software Subscriptions,Expenses,expense,6013.35,6013.35
+6300,Cloud Hosting,Expenses,expense,29603.35,29603.35
+6400,Rent,Expenses,expense,58500.00,58500.00
+6500,Insurance,Expenses,expense,7200.00,7200.00
+6600,Marketing and Advertising,Expenses,expense,27598.52,27598.52
+6700,Office Supplies,Expenses,expense,1709.13,1709.13
+6800,Professional Fees,Expenses,expense,54013.42,54013.42
+6900,Travel and Meals,Expenses,expense,6200.10,6200.10
+6950,Bank and Processor Fees,Expenses,expense,7582.69,7582.69
+7000,Depreciation Expense,Expenses,expense,10400.00,10400.00
+7100,Amortization Expense,Expenses,expense,7000.00,7000.00

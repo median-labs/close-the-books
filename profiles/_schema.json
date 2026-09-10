@@ -1,0 +1,362 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/close-the-books/profiles/_schema.json",
+  "title": "Close the Books company profile",
+  "description": "Everything the engine is allowed to know about one company. The engine itself knows bookkeeping in general and nothing about anyone in particular, so every company-specific fact enters here and nowhere else. Most of a profile is mined from the company's own posted history by `books.py learn`; what is left is what history cannot answer. A real company's profile is named `<something>.local.json` and is ignored by git: it holds their chart, their vendors and their unanswered questions, and it never belongs in this repository. `profiles/example-acme-robotics.json` is the worked example, for an invented company. This schema documents what `closethebooks.profile.load()` accepts; `validate()` enforces the parts of it that would otherwise make the engine behave wrongly.",
+  "type": "object",
+  "required": ["entity"],
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "integer",
+      "default": 1,
+      "description": "Schema version of this file. 1 is current. Bump it only when a key changes meaning, never for adding a company fact."
+    },
+    "entity": {
+      "type": "object",
+      "description": "Who the books belong to and what they are FOR. These four answers (basis, end use, deadline, materiality) decide what 'correct' means before any work starts: a book that is fine for a tax return can be unfit for a sale. `Entity.blanks()` lists whichever are missing and the skills ask for them first.",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The company's proper legal name, as it appears on the return. Not a nickname or a folder name."
+        },
+        "fiscal_year": {
+          "type": "string",
+          "description": "The year being closed, or the year end where it is not a calendar year (\"2025\", or \"FYE 2025-06-30\")."
+        },
+        "basis": {
+          "type": "string",
+          "enum": ["accrual", "cash"],
+          "description": "Accrual or cash. It decides whether an unpaid invoice is revenue, so it changes almost every number downstream. Take it from the last filed return rather than assuming."
+        },
+        "end_use": {
+          "type": "string",
+          "description": "What these books are actually for, in a sentence: a federal return, a diligence room, a bank covenant, a sale, an audit. The end use sets the standard of care and decides which defects matter."
+        },
+        "deadline": {
+          "type": "string",
+          "description": "ISO date (YYYY-MM-DD) the end use needs the books by. A filing date, a closing date, an audit fieldwork date."
+        },
+        "preparer": {
+          "type": "string",
+          "description": "Who signs or relies on the result: the CPA firm, the auditor, the buyer's accountants. Blank where nobody outside will see it."
+        },
+        "materiality": {
+          "type": "string",
+          "description": "A dollar figure below which a difference is reported but not chased, as a plain number (\"500.00\"). Blank means report everything, which is the safe default. It is never a licence to plug a difference: a difference is always reported as a number."
+        },
+        "currency": {
+          "type": "string",
+          "default": "USD",
+          "description": "The books' reporting currency, ISO 4217 (\"USD\"). This engine does not translate currencies."
+        }
+      }
+    },
+    "chart": {
+      "type": "array",
+      "description": "The chart of accounts, one object per account, usually copied straight from the QuickBooks Account List export. It is here so the engine can name an account without opening a workbook, and so a role can be recorded against an account that the exports themselves never state a role for.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "number": {
+            "type": "string",
+            "description": "The account number where the chart is numbered (\"1010\"). The number is the account's identity: the same account is spelled three different ways across three QuickBooks reports and the number is the only part all three agree on. Leave it blank where the chart is unnumbered, and the full name becomes the key."
+          },
+          "name": {
+            "type": "string",
+            "description": "The account's own name, without its parents (\"Northgate Checking 7742\")."
+          },
+          "full_name": {
+            "type": "string",
+            "description": "The name including any parent path, colon separated (\"Current Assets:Northgate Checking 7742\"). Blank where the account has no parent."
+          },
+          "type": {
+            "type": "string",
+            "description": "The QuickBooks account type, verbatim from the export, plural and parenthesised forms included (\"Expenses\", \"Other Current Assets\", \"Accounts Payable (A/P)\"). Do not tidy it: the loader normalises it, and the type is what decides which side increases the account."
+          },
+          "detail_type": {
+            "type": "string",
+            "description": "The QuickBooks detail type (\"Prepaid Expenses\"). Carried for reporting; nothing keys off it."
+          },
+          "role": {
+            "type": "string",
+            "enum": ["bank", "card", "clearing", "obe", "ar", "ap", "prepaid", "intangible", "amortization", "intercompany", "safe", "equity", "revenue", "expense", "payroll_liability", "shareholder", "tax", "other"],
+            "default": "other",
+            "description": "What this account is FOR, in the engine's own vocabulary. This is the one field worth writing by hand. A role is how a check finds an account whose name it cannot guess: 'obe' is the opening balance equity account, 'clearing' is a processor account that should return to zero every month, 'safe' is a convertible instrument that may be sitting in the wrong section. An unknown role is rejected by validate(), because an unrecognised one silently disables every check that keys off it."
+          },
+          "active": {
+            "type": "boolean",
+            "default": true,
+            "description": "False for an account that has been made inactive in QuickBooks but still carries a balance or history."
+          }
+        }
+      }
+    },
+    "accounts": {
+      "type": "array",
+      "description": "The company's real-world bank and card accounts, and how to read their statements. One object per account. This is what tells the engine that a statement file belongs to a chart account, and it is where a dead feed is declared.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "book": {
+            "type": "string",
+            "description": "The chart key this account posts to: the account number, or the full name where the chart is unnumbered. Must match a `chart` entry."
+          },
+          "label": {
+            "type": "string",
+            "description": "How a human refers to it (\"Northgate Checking 7742\"). Used in reports and questions."
+          },
+          "institution": {
+            "type": "string",
+            "description": "The bank or issuer (\"Northgate Bank\"). Used to pick a statement parser and to word the request when a statement is missing."
+          },
+          "mask": {
+            "type": "string",
+            "description": "The last four (or more) digits of the account number, as the statements print them (\"7742\"). This is what matches a statement file to an account, so it must match what actually appears in the file names."
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["bank", "card"],
+            "default": "bank",
+            "description": "Bank or card. It changes the direction a normal balance runs, and how a payment is read."
+          },
+          "feed": {
+            "type": "string",
+            "enum": ["live", "dead", "none"],
+            "default": "live",
+            "description": "Whether the bank feed into the accounting system is working. 'dead' is the important one: it means statement months exist that the books never received, which is the gap `fill-feed-gaps` closes. 'none' means the account was never connected at all."
+          },
+          "feed_last": {
+            "type": "string",
+            "description": "ISO date the feed last delivered a transaction. On a dead feed this is the boundary: everything after it is missing from the books and has to come off the statements."
+          },
+          "parser": {
+            "type": "string",
+            "enum": ["generic_csv", "mercury_checking", "mercury_card", "brex_csv"],
+            "default": "generic_csv",
+            "description": "Which statement parser reads this account's files. Leave it at generic_csv unless a dedicated parser exists: generic_csv reads any export with a date column and either an Amount column or a Debit/Credit pair, and it is the one that is exercised most."
+          },
+          "note": {
+            "type": "string",
+            "description": "Anything a person would need to know about this account: which months are uncategorised, that the same card is in the chart twice, that the statements arrive as a zip."
+          }
+        }
+      }
+    },
+    "what_goes_where": {
+      "type": "array",
+      "description": "The categorisation rules: which account a bank row belongs in. Most of these are mined from the company's own posted history rather than written, and a mined rule carries the count of rows that agree with it. A rule is never an opinion nobody can check: validate() rejects any rule with no source.",
+      "items": {
+        "type": "object",
+        "required": ["id", "account", "source"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "A stable, unique id for this rule (\"r-rent\"). It appears next to every proposal the rule produced, so a person can see which rule made a decision and turn it off."
+          },
+          "account": {
+            "type": "string",
+            "description": "The chart key rows matching this rule post to. Must exist in `chart`."
+          },
+          "account_full": {
+            "type": "string",
+            "description": "The account's printed label, for reading the rule without a lookup (\"6400 Rent\")."
+          },
+          "match_contains": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Substrings to look for in the bank descriptor, matched case- and accent-insensitively. Any one of them matching is enough. Prefer a distinctive vendor string over a short one: \"WINGTIP WORKSPACE\", not \"RENT\"."
+          },
+          "match_regex": {
+            "type": "string",
+            "description": "A regular expression matched against the normalised descriptor, for the cases a substring cannot express. Leave it blank where match_contains does the job; a rule needs one or the other."
+          },
+          "direction": {
+            "type": "string",
+            "enum": ["in", "out", "any"],
+            "default": "any",
+            "description": "Restricts the rule to money in, money out, or neither. Worth setting whenever a vendor both charges and refunds, because a refund usually belongs somewhere else."
+          },
+          "class": {
+            "type": "string",
+            "description": "The QuickBooks class or location to tag matching rows with. Leave blank where the company does not use classes."
+          },
+          "source": {
+            "type": "string",
+            "description": "Where this rule came from: the count of the company's own booked rows that agree with it, a signed document, or the founder's answer with its date. Required. A rule without a source is an assertion that will be indistinguishable from a guess in a month."
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Share of the company's own history that agrees, 0 to 1. A mined rule computes it; a hand-written rule from a document is 1.0."
+          },
+          "support": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "How many historical rows back this rule."
+          },
+          "conflicts": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "How many historical rows went somewhere else instead. A rule with conflicts is a rule that should probably be a question."
+          },
+          "note": {
+            "type": "string",
+            "description": "Anything a person reviewing the rule needs: the exception it does not cover, the month it changed."
+          }
+        }
+      }
+    },
+    "recurring_entries": {
+      "type": "object",
+      "description": "The month-end entries this company is supposed to make. Four keys are read, and ONLY four, one per generator in lib/closethebooks/entries: `prepaid`, `intangibles`, `payroll`, `stripe`. A schedule filed under any other name is silently never drafted, which is what happened to the shipped example until 2026-09-10: it used descriptive names like `prepaid_insurance` and `depreciation`, matched this schema exactly, and drafted nothing. `prepaid` and `intangibles` are ARRAYS, one entry per contract or asset, because a company has several. Declare a block with its accounts even when the figures it needs are missing: the command then names what it is waiting for instead of appearing to do nothing.",
+      "properties": {
+        "prepaid": {
+          "type": "array",
+          "description": "One object per prepaid contract. Read by prepaid.build.",
+          "items": {
+            "type": "object",
+            "required": ["vendor", "total", "start", "term_months", "prepaid_account", "expense_account"],
+            "properties": {
+              "vendor": {"type": "string", "description": "Who was paid (\"Adatum Insurance\")."},
+              "total": {"type": "string", "description": "The whole amount paid up front, as a plain number (\"14400.00\"). The monthly charge is derived from this and term_months; do not state it separately."},
+              "start": {"type": "string", "description": "First month the charge belongs to (YYYY-MM-DD). Match the company's own first entry rather than prorating, or the schedule will not reproduce its books."},
+              "term_months": {"type": "integer", "description": "How many months the cost is spread over."},
+              "prepaid_account": {"type": "string", "description": "The balance sheet account being drawn down (\"1300\")."},
+              "expense_account": {"type": "string", "description": "Where the monthly charge lands (\"6500\")."},
+              "class": {"type": "string", "description": "The class every entry carries, where the company uses classes."},
+              "source": {"type": "string", "description": "The document this rests on: policy or invoice number, date, amount."}
+            }
+          }
+        },
+        "intangibles": {
+          "type": "array",
+          "description": "One object per amortizing asset. Read by intangibles.build. Tangible depreciation has no generator; do not route machinery through here, it would be labelled an intangible.",
+          "items": {
+            "type": "object",
+            "required": ["asset", "cost", "in_service", "life_months", "asset_account", "accumulated_account", "expense_account"],
+            "properties": {
+              "asset": {"type": "string", "description": "What it is (\"Orion design license\")."},
+              "cost": {"type": "string", "description": "Capitalised cost as a plain number."},
+              "in_service": {"type": "string", "description": "The date amortization starts (YYYY-MM-DD)."},
+              "life_months": {"type": "integer", "description": "Useful life in months."},
+              "asset_account": {"type": "string"},
+              "accumulated_account": {"type": "string", "description": "The contra account. Without it the generator refuses rather than crediting the asset directly."},
+              "expense_account": {"type": "string"},
+              "class": {"type": "string"},
+              "source": {"type": "string"}
+            }
+          }
+        },
+        "payroll": {
+          "type": "object",
+          "description": "Read by payroll.build, which needs `periods`, one per pay date, from the payroll provider's own register. Gross is never derived from net: a run whose gross does not equal net plus withholdings is refused with the difference stated, never plugged.",
+          "properties": {
+            "wages_account": {"type": "string"},
+            "taxes_account": {"type": "string"},
+            "benefits_account": {"type": "string"},
+            "cash_account": {"type": "string"},
+            "withholding_accounts": {"type": "object", "description": "Each withholding mapped to its own liability account. A withholding with no declared account is refused, because netting it into benefits is the defect this catches."},
+            "periods": {"type": "array", "description": "One object per pay date, from the register: date, gross, net, and each withholding."},
+            "needs": {"type": "string", "description": "What is still missing, where periods are absent. The command prints this."}
+          }
+        },
+        "stripe": {
+          "type": "object",
+          "description": "Read by stripe.build for month-end processor revenue. Needs the processor's own monthly figures (gross, fees, refunds, payout), not the bank deposit, which is net.",
+          "properties": {
+            "clearing_account": {"type": "string"},
+            "revenue_account": {"type": "string"},
+            "fees_account": {"type": "string"},
+            "refunds_account": {"type": "string"},
+            "cash_account": {"type": "string"},
+            "months": {"type": "array", "description": "One object per month from the processor's own report."},
+            "needs": {"type": "string"}
+          }
+        }
+      },
+      "additionalProperties": {
+        "type": ["object", "array"],
+        "description": "Any other key is documentation only. NO generator reads it, and nothing will be drafted from it. Name such a block so that is obvious, for example `depreciation_not_drafted`."
+      }
+    },
+    "known_figures": {
+      "type": "array",
+      "description": "Balances someone outside the books has confirmed: a lender's payoff figure, a cap table, a statement balance, a prior-year return. They are what a tie-out is checked against, so each one records where it came from.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "account": {"type": "string", "description": "The chart key the figure belongs to."},
+          "value": {"type": "string", "description": "The amount as a plain number, negative allowed (\"4182.65\")."},
+          "as_of": {"type": "string", "description": "ISO date the figure is as of."},
+          "source": {"type": "string", "description": "Who says so: the document, the statement, the person and the date. Our own workpapers are not a source."}
+        }
+      }
+    },
+    "open_questions": {
+      "type": "array",
+      "description": "What history cannot answer, waiting on a person. A question is a first-class outcome in this engine: a row nothing can explain is escalated, never guessed. Ids must be unique; `answer` stays empty until someone answers, and `Profile.answer()` stamps who said it and when.",
+      "items": {
+        "type": "object",
+        "required": ["id", "question"],
+        "properties": {
+          "id": {"type": "string", "description": "A stable, unique id (\"q-trey-research\"). Rules and plan steps refer to it to say what they are blocked by."},
+          "question": {"type": "string", "description": "The question as it will be put to the founder, in their language, with the evidence that raised it. One question, answerable in a sentence."},
+          "why": {"type": "string", "description": "What turns on the answer, so the reader can tell an urgent question from a tidy-up."},
+          "blocks": {"type": "array", "items": {"type": "string"}, "description": "What cannot proceed until this is answered."},
+          "answer": {"type": "string", "description": "The answer, verbatim. Empty means unanswered; `unanswered()` lists these."},
+          "answered_on": {"type": "string", "description": "ISO date the answer was given."},
+          "source": {"type": "string", "description": "Who answered, or which document did."}
+        }
+      }
+    },
+    "decisions_made": {
+      "type": "array",
+      "description": "Decisions already taken, so they are not re-litigated every run and so a reviewer can see what was decided on what basis. Record the ones that shape posting behaviour: how a recurring payout is treated, whether a transfer is ever income.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "string", "description": "A stable id for the decision."},
+          "decision": {"type": "string", "description": "What was decided, in a sentence, stated as a rule the engine can follow."},
+          "on": {"type": "string", "description": "ISO date it was decided."},
+          "source": {"type": "string", "description": "Who decided, or the evidence it rests on."}
+        }
+      }
+    },
+    "decisions_reserved_to_founder": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Things this engine may never decide on its own, however confident it is. Write them as plain sentences. Typical members: reclassifying an equity instrument, writing off a balance, retiring or merging an account, touching a period already reported to a third party."
+    },
+    "structural_plan": {
+      "type": "array",
+      "description": "The chart changes this company needs, in the order they should happen. Structural work carries a per-row balance disposition, never 'archive' or 'clean up', so each step names the accounts it touches and the question it waits on.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "step": {"type": "string", "description": "What is being done, as an instruction (\"merge the duplicate card into one account\")."},
+          "accounts": {"type": "array", "items": {"type": "string"}, "description": "Every chart key the step touches."},
+          "blocked_by": {"type": "string", "description": "The id of an open question that has to be answered first, or blank."}
+        }
+      }
+    },
+    "wind_down": {
+      "type": "object",
+      "description": "Only for a company that is actually closing. Leave it as an empty object for a going concern. Liquidating entries are the least reversible thing in this repository and each one rests on a fact only the owner has, so `wind_down_ready()` refuses until all five keys are filled.",
+      "properties": {
+        "target_date": {"type": "string", "description": "ISO date the entity is to be wound up."},
+        "receivable_plan": {"type": "string", "description": "What happens to each open receivable: collected, written off, assigned. Named, not summarised."},
+        "safe_terms": {"type": "string", "description": "What each convertible instrument does on dissolution, per its own signed document."},
+        "cap_table": {"type": "string", "description": "Who holds what, as of a stated date, and where the document lives."},
+        "resolution_date": {"type": "string", "description": "ISO date of the board or member resolution authorising the wind-down."}
+      }
+    },
+    "notes": {
+      "type": "string",
+      "description": "Anything a person picking this profile up needs to know that has no other home. Not a log: dated history belongs in the company's own records."
+    }
+  }
+}

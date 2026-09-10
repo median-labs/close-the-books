@@ -1,0 +1,11 @@
+Northgate Bank,
+Account,Business Savings 7809
+Statement period,12/01/2025 - 12/31/2025
+Opening balance,55132.17
+Total deposits,5024.05
+Total withdrawals,0.00
+Closing balance,60156.22
+
+Date,Description,Amount,Balance,Transaction ID
+12/05/2025,TRANSFER FROM CHECKING 7742,5000.00,60132.17,NGS100575
+12/31/2025,INTEREST PAID,24.05,60156.22,NGS100643

@@ -1,0 +1,800 @@
+{
+  "version": 1,
+  "entity": {
+    "name": "Acme Robotics Inc.",
+    "fiscal_year": "2025",
+    "basis": "accrual",
+    "end_use": "the 2025 federal corporate income tax return and a seed round data room",
+    "deadline": "2026-04-15",
+    "preparer": "outside CPA, engaged for the 2025 return",
+    "materiality": "500.00",
+    "currency": "USD"
+  },
+  "chart": [
+    {
+      "number": "1010",
+      "name": "Northgate Checking 7742",
+      "full_name": "Northgate Checking 7742",
+      "type": "Bank",
+      "detail_type": "Checking",
+      "role": "bank"
+    },
+    {
+      "number": "1020",
+      "name": "Northgate Savings 7809",
+      "full_name": "Northgate Savings 7809",
+      "type": "Bank",
+      "detail_type": "Savings",
+      "role": "bank"
+    },
+    {
+      "number": "1100",
+      "name": "Accounts Receivable",
+      "full_name": "Accounts Receivable",
+      "type": "Accounts Receivable (A/R)",
+      "detail_type": "Accounts Receivable",
+      "role": "ar"
+    },
+    {
+      "number": "1200",
+      "name": "Paylane Clearing",
+      "full_name": "Paylane Clearing",
+      "type": "Other Current Assets",
+      "detail_type": "Other Current Assets",
+      "role": "clearing"
+    },
+    {
+      "number": "1300",
+      "name": "Prepaid Insurance",
+      "full_name": "Prepaid Insurance",
+      "type": "Other Current Assets",
+      "detail_type": "Prepaid Expenses",
+      "role": "prepaid"
+    },
+    {
+      "number": "1310",
+      "name": "Prepaid Software",
+      "full_name": "Prepaid Software",
+      "type": "Other Current Assets",
+      "detail_type": "Prepaid Expenses",
+      "role": "prepaid"
+    },
+    {
+      "number": "1500",
+      "name": "Machinery and Equipment",
+      "full_name": "Machinery and Equipment",
+      "type": "Fixed Assets",
+      "detail_type": "Machinery and Equipment",
+      "role": "other"
+    },
+    {
+      "number": "1510",
+      "name": "Accumulated Depreciation",
+      "full_name": "Accumulated Depreciation",
+      "type": "Fixed Assets",
+      "detail_type": "Accumulated Depreciation",
+      "role": "other"
+    },
+    {
+      "number": "1600",
+      "name": "Intangible Assets - Design License",
+      "full_name": "Intangible Assets - Design License",
+      "type": "Other Assets",
+      "detail_type": "Other Long Term Assets",
+      "role": "intangible"
+    },
+    {
+      "number": "1610",
+      "name": "Accumulated Amortization - Design License",
+      "full_name": "Accumulated Amortization - Design License",
+      "type": "Other Assets",
+      "detail_type": "Other Long Term Assets",
+      "role": "amortization"
+    },
+    {
+      "number": "2010",
+      "name": "Accounts Payable",
+      "full_name": "Accounts Payable",
+      "type": "Accounts Payable (A/P)",
+      "detail_type": "Accounts Payable",
+      "role": "ap"
+    },
+    {
+      "number": "2100",
+      "name": "Vantage Card 3391",
+      "full_name": "Vantage Card 3391",
+      "type": "Credit Card",
+      "detail_type": "Credit Card",
+      "role": "card"
+    },
+    {
+      "number": "",
+      "name": "Vantage Credit Card 3391",
+      "full_name": "Vantage Credit Card 3391",
+      "type": "Credit Card",
+      "detail_type": "Credit Card",
+      "role": "card"
+    },
+    {
+      "number": "3000",
+      "name": "Common Stock",
+      "full_name": "Common Stock",
+      "type": "Equity",
+      "detail_type": "Common Stock",
+      "role": "equity"
+    },
+    {
+      "number": "3100",
+      "name": "Additional Paid-In Capital",
+      "full_name": "Additional Paid-In Capital",
+      "type": "Equity",
+      "detail_type": "Paid-In Capital or Surplus",
+      "role": "equity"
+    },
+    {
+      "number": "3200",
+      "name": "Opening Balance Equity",
+      "full_name": "Opening Balance Equity",
+      "type": "Equity",
+      "detail_type": "Opening Balance Equity",
+      "role": "obe"
+    },
+    {
+      "number": "3300",
+      "name": "SAFE - Simple Agreement for Future Equity",
+      "full_name": "SAFE - Simple Agreement for Future Equity",
+      "type": "Equity",
+      "detail_type": "Other Equity",
+      "role": "safe"
+    },
+    {
+      "number": "3900",
+      "name": "Retained Earnings",
+      "full_name": "Retained Earnings",
+      "type": "Equity",
+      "detail_type": "Retained Earnings",
+      "role": "equity"
+    },
+    {
+      "number": "4000",
+      "name": "Product Revenue",
+      "full_name": "Product Revenue",
+      "type": "Income",
+      "detail_type": "Sales of Product Income",
+      "role": "revenue"
+    },
+    {
+      "number": "4100",
+      "name": "Service Revenue",
+      "full_name": "Service Revenue",
+      "type": "Income",
+      "detail_type": "Service/Fee Income",
+      "role": "revenue"
+    },
+    {
+      "number": "4900",
+      "name": "Interest Income",
+      "full_name": "Interest Income",
+      "type": "Other Income",
+      "detail_type": "Interest Earned",
+      "role": "revenue"
+    },
+    {
+      "number": "5000",
+      "name": "Cost of Goods Sold - Components",
+      "full_name": "Cost of Goods Sold - Components",
+      "type": "Cost of Goods Sold",
+      "detail_type": "Supplies and Materials - COS",
+      "role": "expense"
+    },
+    {
+      "number": "5100",
+      "name": "Shipping and Freight",
+      "full_name": "Shipping and Freight",
+      "type": "Cost of Goods Sold",
+      "detail_type": "Shipping, Freight and Delivery - COS",
+      "role": "expense"
+    },
+    {
+      "number": "6000",
+      "name": "Salaries and Wages",
+      "full_name": "Salaries and Wages",
+      "type": "Expenses",
+      "detail_type": "Payroll Expenses",
+      "role": "expense"
+    },
+    {
+      "number": "6010",
+      "name": "Payroll Taxes",
+      "full_name": "Payroll Taxes",
+      "type": "Expenses",
+      "detail_type": "Payroll Expenses",
+      "role": "expense"
+    },
+    {
+      "number": "6100",
+      "name": "Contract Engineering",
+      "full_name": "Contract Engineering",
+      "type": "Expenses",
+      "detail_type": "Legal and Professional Fees",
+      "role": "expense"
+    },
+    {
+      "number": "6200",
+      "name": "Software Subscriptions",
+      "full_name": "Software Subscriptions",
+      "type": "Expenses",
+      "detail_type": "Office/General Administrative Expenses",
+      "role": "expense"
+    },
+    {
+      "number": "6300",
+      "name": "Cloud Hosting",
+      "full_name": "Cloud Hosting",
+      "type": "Expenses",
+      "detail_type": "Office/General Administrative Expenses",
+      "role": "expense"
+    },
+    {
+      "number": "6400",
+      "name": "Rent",
+      "full_name": "Rent",
+      "type": "Expenses",
+      "detail_type": "Rent or Lease of Buildings",
+      "role": "expense"
+    },
+    {
+      "number": "6500",
+      "name": "Insurance",
+      "full_name": "Insurance",
+      "type": "Expenses",
+      "detail_type": "Insurance",
+      "role": "expense"
+    },
+    {
+      "number": "6600",
+      "name": "Marketing and Advertising",
+      "full_name": "Marketing and Advertising",
+      "type": "Expenses",
+      "detail_type": "Advertising/Promotional",
+      "role": "expense"
+    },
+    {
+      "number": "6700",
+      "name": "Office Supplies",
+      "full_name": "Office Supplies",
+      "type": "Expenses",
+      "detail_type": "Office/General Administrative Expenses",
+      "role": "expense"
+    },
+    {
+      "number": "6800",
+      "name": "Professional Fees",
+      "full_name": "Professional Fees",
+      "type": "Expenses",
+      "detail_type": "Legal and Professional Fees",
+      "role": "expense"
+    },
+    {
+      "number": "6900",
+      "name": "Travel and Meals",
+      "full_name": "Travel and Meals",
+      "type": "Expenses",
+      "detail_type": "Travel Meals",
+      "role": "expense"
+    },
+    {
+      "number": "6950",
+      "name": "Bank and Processor Fees",
+      "full_name": "Bank and Processor Fees",
+      "type": "Expenses",
+      "detail_type": "Bank Charges",
+      "role": "expense"
+    },
+    {
+      "number": "7000",
+      "name": "Depreciation Expense",
+      "full_name": "Depreciation Expense",
+      "type": "Expenses",
+      "detail_type": "Depreciation",
+      "role": "expense"
+    },
+    {
+      "number": "7100",
+      "name": "Amortization Expense",
+      "full_name": "Amortization Expense",
+      "type": "Expenses",
+      "detail_type": "Amortization",
+      "role": "expense"
+    }
+  ],
+  "accounts": [
+    {
+      "book": "1010",
+      "label": "Northgate Checking 7742",
+      "institution": "Northgate Bank",
+      "mask": "7742",
+      "kind": "bank",
+      "feed": "live",
+      "feed_last": "2026-02-28",
+      "parser": "generic_csv",
+      "note": "categorised through 2025-09-30; everything after that is sitting in for-review/"
+    },
+    {
+      "book": "1020",
+      "label": "Northgate Savings 7809",
+      "institution": "Northgate Bank",
+      "mask": "7809",
+      "kind": "bank",
+      "feed": "live",
+      "feed_last": "2026-02-28",
+      "parser": "generic_csv",
+      "note": "transfers from checking and monthly interest only"
+    },
+    {
+      "book": "2100",
+      "label": "Vantage Card 3391",
+      "institution": "Vantage Card Services",
+      "mask": "3391",
+      "kind": "card",
+      "feed": "dead",
+      "feed_last": "2025-07-31",
+      "parser": "generic_csv",
+      "note": "the feed stopped on 2025-07-31; the statements are complete and the books are not. The same card is in the chart twice: 2100 and the unnumbered 'Vantage Credit Card 3391'"
+    }
+  ],
+  "what_goes_where": [
+    {
+      "id": "r-rent",
+      "account": "6400",
+      "account_full": "6400 Rent",
+      "match_contains": [
+        "WINGTIP WORKSPACE"
+      ],
+      "match_regex": "",
+      "direction": "out",
+      "class": "Overhead",
+      "source": "every booked month posts the Wingtip ACH to 6400 Rent; office lease dated 2024-12-18 (9 booked rows through 2025-09-30)",
+      "confidence": 1.0,
+      "support": 9,
+      "conflicts": 0,
+      "note": ""
+    },
+    {
+      "id": "r-cloud",
+      "account": "6300",
+      "account_full": "6300 Cloud Hosting",
+      "match_contains": [
+        "CONTOSO CLOUD"
+      ],
+      "match_regex": "",
+      "direction": "out",
+      "class": "Services",
+      "source": "every booked month posts the Contoso charge to 6300 Cloud Hosting (20 booked rows through 2025-09-30)",
+      "confidence": 1.0,
+      "support": 20,
+      "conflicts": 0,
+      "note": ""
+    },
+    {
+      "id": "r-freight",
+      "account": "5100",
+      "account_full": "5100 Shipping and Freight",
+      "match_contains": [
+        "FABRIKAM FREIGHT"
+      ],
+      "match_regex": "",
+      "direction": "out",
+      "class": "Product",
+      "source": "outbound freight, posted to 5100 in every booked month (41 booked rows through 2025-09-30)",
+      "confidence": 1.0,
+      "support": 41,
+      "conflicts": 0,
+      "note": ""
+    },
+    {
+      "id": "r-components",
+      "account": "5000",
+      "account_full": "5000 Cost of Goods Sold - Components",
+      "match_contains": [
+        "NORTHWIND SUPPLY"
+      ],
+      "match_regex": "",
+      "direction": "out",
+      "class": "Product",
+      "source": "component supplier; bills post to 5000 and the ACH pays the bill down (37 booked rows through 2025-09-30)",
+      "confidence": 1.0,
+      "support": 37,
+      "conflicts": 0,
+      "note": ""
+    },
+    {
+      "id": "r-legal",
+      "account": "6800",
+      "account_full": "6800 Professional Fees",
+      "match_contains": [
+        "LITWARE LEGAL"
+      ],
+      "match_regex": "",
+      "direction": "out",
+      "class": "Overhead",
+      "source": "outside counsel, posted to 6800 Professional Fees in the booked history (27 booked rows through 2025-09-30)",
+      "confidence": 1.0,
+      "support": 27,
+      "conflicts": 0,
+      "note": ""
+    },
+    {
+      "id": "r-marketing",
+      "account": "6600",
+      "account_full": "6600 Marketing and Advertising",
+      "match_contains": [
+        "LUMINA ADS"
+      ],
+      "match_regex": "",
+      "direction": "out",
+      "class": "Overhead",
+      "source": "ad platform, posted to 6600 in the booked history (10 booked rows through 2025-09-30)",
+      "confidence": 1.0,
+      "support": 10,
+      "conflicts": 0,
+      "note": ""
+    },
+    {
+      "id": "r-office",
+      "account": "6700",
+      "account_full": "6700 Office Supplies",
+      "match_contains": [
+        "CASCADE OFFICE"
+      ],
+      "match_regex": "",
+      "direction": "out",
+      "class": "Overhead",
+      "source": "office supplier, posted to 6700 in the booked history (7 booked rows through 2025-09-30)",
+      "confidence": 1.0,
+      "support": 7,
+      "conflicts": 0,
+      "note": ""
+    },
+    {
+      "id": "r-bank-fee",
+      "account": "6950",
+      "account_full": "6950 Bank and Processor Fees",
+      "match_contains": [
+        "MONTHLY MAINTENANCE FEE"
+      ],
+      "match_regex": "",
+      "direction": "out",
+      "class": "Overhead",
+      "source": "Northgate account analysis fee, posted to 6950 in every booked month (9 booked rows through 2025-09-30)",
+      "confidence": 1.0,
+      "support": 9,
+      "conflicts": 0,
+      "note": ""
+    },
+    {
+      "id": "r-interest",
+      "account": "4900",
+      "account_full": "4900 Interest Income",
+      "match_contains": [
+        "INTEREST PAID"
+      ],
+      "match_regex": "",
+      "direction": "in",
+      "class": "Overhead",
+      "source": "savings interest, posted to 4900 Interest Income in every booked month (9 booked rows through 2025-09-30)",
+      "confidence": 1.0,
+      "support": 9,
+      "conflicts": 0,
+      "note": ""
+    },
+    {
+      "id": "r-paylane-payout",
+      "account": "1200",
+      "account_full": "1200 Paylane Clearing",
+      "match_contains": [
+        "PAYLANE PAYOUT"
+      ],
+      "match_regex": "",
+      "direction": "in",
+      "class": "Overhead",
+      "source": "processor payouts clear 1200 Paylane Clearing; they are never revenue (28 booked rows through 2025-09-30)",
+      "confidence": 1.0,
+      "support": 28,
+      "conflicts": 0,
+      "note": ""
+    },
+    {
+      "id": "r-card-payment",
+      "account": "2100",
+      "account_full": "2100 Vantage Card 3391",
+      "match_contains": [
+        "VANTAGE CARD PAYMENT"
+      ],
+      "match_regex": "",
+      "direction": "out",
+      "class": "Overhead",
+      "source": "pays the Vantage card down; both sides are the company's own accounts (9 booked rows through 2025-09-30)",
+      "confidence": 1.0,
+      "support": 9,
+      "conflicts": 0,
+      "note": ""
+    },
+    {
+      "id": "r-transfer-out",
+      "account": "1020",
+      "account_full": "1020 Northgate Savings 7809",
+      "match_contains": [
+        "TRANSFER TO SAVINGS"
+      ],
+      "match_regex": "",
+      "direction": "out",
+      "class": "Overhead",
+      "source": "checking to savings, the company's own money moving between its own accounts (9 booked rows through 2025-09-30)",
+      "confidence": 1.0,
+      "support": 9,
+      "conflicts": 0,
+      "note": ""
+    },
+    {
+      "id": "r-transfer-in",
+      "account": "1010",
+      "account_full": "1010 Northgate Checking 7742",
+      "match_contains": [
+        "TRANSFER FROM CHECKING"
+      ],
+      "match_regex": "",
+      "direction": "in",
+      "class": "Overhead",
+      "source": "the other side of the same transfer (9 booked rows through 2025-09-30)",
+      "confidence": 1.0,
+      "support": 9,
+      "conflicts": 0,
+      "note": ""
+    },
+    {
+      "id": "r-customer-ach",
+      "account": "1100",
+      "account_full": "1100 Accounts Receivable",
+      "match_contains": [
+        "VOLT DYNAMICS",
+        "HELIOS MANUFACTURING",
+        "MERIDIAN AUTOMATION",
+        "CORVUS LABS"
+      ],
+      "match_regex": "",
+      "direction": "in",
+      "class": "Overhead",
+      "source": "customer receipts clear 1100 Accounts Receivable against an open invoice (16 booked rows through 2025-09-30)",
+      "confidence": 1.0,
+      "support": 16,
+      "conflicts": 0,
+      "note": ""
+    }
+  ],
+  "recurring_entries": {
+    "prepaid": [
+      {
+        "vendor": "Adatum Insurance",
+        "total": "14400.00",
+        "start": "2025-01-01",
+        "term_months": 12,
+        "prepaid_account": "1300",
+        "expense_account": "6500",
+        "class": "Overhead",
+        "source": "Adatum general liability policy AR-88213, 14,400.00 paid 2025-01-02 for the twelve months 2025-01 to 2025-12. The company's own entries amortize 1,200.00 a month to 6500 against 1300 and stop after 2025-06."
+      },
+      {
+        "vendor": "Tailspin Tools",
+        "total": "9600.00",
+        "start": "2025-03-01",
+        "term_months": 12,
+        "prepaid_account": "1310",
+        "expense_account": "6200",
+        "class": "Overhead",
+        "source": "Tailspin annual platform contract, 9,600.00 paid 2025-03-03 covering 2025-03 to 2026-02. The company's own entries amortize 800.00 a month to 6200 against 1310 and stop after 2025-08."
+      }
+    ],
+    "intangibles": [
+      {
+        "asset": "Orion design license",
+        "cost": "60000.00",
+        "in_service": "2025-01-01",
+        "life_months": 60,
+        "asset_account": "1600",
+        "accumulated_account": "1610",
+        "expense_account": "7100",
+        "class": "Product",
+        "source": "Orion Design Works perpetual design license, 60,000.00 wired 2025-01-15, 60-month life. The company's own entries charge a full 1,000.00 a month to 7100 against 1610 from 2025-01, so the schedule starts 2025-01-01 rather than prorating January, and they stop after 2025-07."
+      }
+    ],
+    "payroll": {
+      "source": "Proseware payroll register, per pay date",
+      "class": "Overhead",
+      "accounts": {
+        "wages": "6000",
+        "employer_taxes": "6010",
+        "bank": "1010",
+        "withholding": {}
+      },
+      "needs": "the Proseware register for each pay date: gross wages, employer taxes, net pay and every withholding itemised, plus a liability account for each withholding, which this chart does not have",
+      "periods": []
+    },
+    "stripe": {
+      "source": "Paylane monthly settlement report: gross sales, processing fees and payouts",
+      "class": "Product",
+      "accounts": {
+        "clearing": "1200",
+        "revenue": "4000",
+        "fees": "6950",
+        "bank": "1010"
+      },
+      "needs": "the Paylane settlement report for each month after 2025-08; the chart also carries no contra-revenue account, so refunds need one opened before they can be booked",
+      "last_month_end_entry": "2025-08",
+      "months": []
+    },
+    "depreciation_not_drafted": {
+      "account": "1510",
+      "expense_account": "7000",
+      "amount": "800.00",
+      "frequency": "monthly",
+      "runs": "2025-02 to 2030-01",
+      "last_posted": "2026-02",
+      "basis": "CNC cell, 48,000.00 over 60 months, in service 2025-02-10",
+      "note": "still posted every month. No generator drafts it; it is here so the schedule is recorded, and it is deliberately not keyed \"depreciation\" because nothing reads that key either."
+    }
+  },
+  "known_figures": [
+    {
+      "account": "3200",
+      "value": "4182.65",
+      "as_of": "2026-02-28",
+      "source": "the Vantage card opening balance entry dated 2025-01-01"
+    },
+    {
+      "account": "3300",
+      "value": "750000.00",
+      "as_of": "2026-02-28",
+      "source": "two SAFEs, 500,000.00 on 2025-01-02 and 250,000.00 on 2025-05-20"
+    },
+    {
+      "account": "1200",
+      "value": "-232441.76",
+      "as_of": "2026-02-28",
+      "source": "ledger balance; should be at or near zero every month end"
+    }
+  ],
+  "open_questions": [
+    {
+      "id": "q-trey-research",
+      "question": "Trey Research: twelve booked payments split four to 6100 Contract Engineering, four to 6800 Professional Fees and four to 6600 Marketing. Which is it, or does it depend on the invoice?",
+      "why": "no rule can be mined; history has no majority",
+      "blocks": [
+        "for-review rows naming TREY RESEARCH"
+      ],
+      "answer": ""
+    },
+    {
+      "id": "q-safe-terms",
+      "question": "The two SAFEs totalling 750,000.00 are booked in equity at 3300. Are they convertible instruments with no maturity, and who holds the signed copies?",
+      "why": "decides whether the balance is reclassified out of permanent equity",
+      "blocks": [
+        "any reclass out of 3300"
+      ],
+      "answer": ""
+    },
+    {
+      "id": "q-duplicate-card",
+      "question": "The Vantage card 3391 is in the chart twice, as 2100 and as the unnumbered Vantage Credit Card 3391. Which one survives, and where does the other one's balance go?",
+      "why": "a merge needs a per-row balance disposition, not an archive",
+      "blocks": [
+        "merging the two card accounts"
+      ],
+      "answer": ""
+    },
+    {
+      "id": "q-opening-balance",
+      "question": "Was 4,182.65 really what the Vantage card owed on 2025-01-01? It is the whole of Opening Balance Equity.",
+      "why": "clearing OBE means proving the amount, not moving it",
+      "blocks": [
+        "clearing 3200"
+      ],
+      "answer": ""
+    },
+    {
+      "id": "q-paylane-reports",
+      "question": "Send the Paylane monthly settlement reports from 2025-09 to 2026-02: gross sales, fees and payouts per month.",
+      "why": "the month-end entry stopped, so revenue is understated and 1200 holds the whole of it",
+      "blocks": [
+        "rebuilding the Paylane month-end entries"
+      ],
+      "answer": ""
+    },
+    {
+      "id": "q-missing-statement",
+      "question": "Send the Northgate checking statement for June 2025.",
+      "why": "the only month of the fourteen with no statement on file",
+      "blocks": [
+        "tying out 2025-06"
+      ],
+      "answer": ""
+    },
+    {
+      "id": "q-flagged-descriptor",
+      "question": "A deposit on 2026-01-10 carries a descriptor containing instruction-like text. Confirm which invoice it pays.",
+      "why": "the descriptor is attacker-chosen text and is never followed",
+      "blocks": [
+        "categorising that row"
+      ],
+      "answer": ""
+    }
+  ],
+  "decisions_made": [
+    {
+      "id": "d-payroll-matching",
+      "decision": "Payroll and Paylane payout rows in the review queue are MATCHED to the journal entry that already exists, never added. They were entered by hand while the feed sat uncategorised.",
+      "on": "2026-03-01",
+      "source": "the journal entries themselves"
+    },
+    {
+      "id": "d-transfers",
+      "decision": "Transfers between Northgate checking and Northgate savings are transfers on both sides. Neither leg is income or expense.",
+      "on": "2026-03-01",
+      "source": "both accounts belong to the company"
+    }
+  ],
+  "decisions_reserved_to_founder": [
+    "reclassifying the SAFEs out of equity",
+    "writing off any part of the 1200 Paylane Clearing balance",
+    "retiring, merging or renaming any account",
+    "anything that changes a period already reported to a third party"
+  ],
+  "structural_plan": [
+    {
+      "step": "merge the duplicate card into one account",
+      "accounts": [
+        "2100",
+        "Vantage Credit Card 3391"
+      ],
+      "blocked_by": "q-duplicate-card"
+    },
+    {
+      "step": "rebuild the Paylane month-end entry for 2025-09 onwards",
+      "accounts": [
+        "1200",
+        "4000",
+        "6950"
+      ],
+      "blocked_by": "q-paylane-reports"
+    },
+    {
+      "step": "restart the three amortization schedules and catch up the entries that were never made",
+      "accounts": [
+        "1300",
+        "1310",
+        "1610",
+        "6200",
+        "6500",
+        "7100"
+      ],
+      "blocked_by": ""
+    },
+    {
+      "step": "clear opening balance equity against the card opening balance",
+      "accounts": [
+        "3200",
+        "2100"
+      ],
+      "blocked_by": "q-opening-balance"
+    },
+    {
+      "step": "reclassify the SAFEs out of permanent equity",
+      "accounts": [
+        "3300"
+      ],
+      "blocked_by": "q-safe-terms"
+    }
+  ],
+  "wind_down": {},
+  "notes": "Generated by examples/acme-robotics/build.py. Acme Robotics Inc. is invented and so is everyone in it. This profile is the worked example: copy its shape, not its contents. A real company's profile belongs outside this repository."
+}

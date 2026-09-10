@@ -1,0 +1,21 @@
+{
+  "company": "Acme Robotics Inc.",
+  "generated_by": "examples/acme-robotics/build.py",
+  "seed": 1042,
+  "period": {
+    "start": "2025-01-01",
+    "end": "2026-02-28"
+  },
+  "entries": 494,
+  "journal_lines": 1025,
+  "total_debits": "4089195.91",
+  "total_credits": "4089195.91",
+  "trial_balance_difference": "0.00",
+  "bank_rows": 806,
+  "statement_files": 41,
+  "for_review_files": 10,
+  "for_review_rows": 254,
+  "for_review_rows_already_booked": 20,
+  "accounts": 37,
+  "defects": 14
+}

@@ -1,0 +1,11 @@
+file,account,month,rows,deposits,withdrawals,net,already_in_the_ledger
+checking-7742-for-review-2025-10.csv,checking-7742,2025-10,40,90721.29,111053.87,-20332.58,4
+checking-7742-for-review-2025-11.csv,checking-7742,2025-11,48,93017.04,131745.30,-38728.26,4
+checking-7742-for-review-2025-12.csv,checking-7742,2025-12,55,97871.06,135320.13,-37449.07,4
+checking-7742-for-review-2026-01.csv,checking-7742,2026-01,48,102558.98,124097.40,-21538.42,4
+checking-7742-for-review-2026-02.csv,checking-7742,2026-02,53,106122.45,133715.63,-27593.18,4
+savings-7809-for-review-2025-10.csv,savings-7809,2025-10,2,5020.04,0.00,5020.04,0
+savings-7809-for-review-2025-11.csv,savings-7809,2025-11,2,5022.04,0.00,5022.04,0
+savings-7809-for-review-2025-12.csv,savings-7809,2025-12,2,5024.05,0.00,5024.05,0
+savings-7809-for-review-2026-01.csv,savings-7809,2026-01,2,5026.06,0.00,5026.06,0
+savings-7809-for-review-2026-02.csv,savings-7809,2026-02,2,5028.07,0.00,5028.07,0

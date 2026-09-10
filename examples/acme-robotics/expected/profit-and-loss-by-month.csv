@@ -1,0 +1,183 @@
+account_key,account,month,amount
+4000,4000 Product Revenue,2025-01,52610.33
+4000,4000 Product Revenue,2025-02,55858.10
+4000,4000 Product Revenue,2025-03,62592.75
+4000,4000 Product Revenue,2025-04,64994.74
+4000,4000 Product Revenue,2025-05,67122.56
+4000,4000 Product Revenue,2025-06,71992.74
+4000,4000 Product Revenue,2025-07,75019.80
+4000,4000 Product Revenue,2025-08,77648.55
+4000,4000 Product Revenue,2025-09,45946.26
+4000,4000 Product Revenue,2025-10,46582.55
+4000,4000 Product Revenue,2025-11,49219.43
+4000,4000 Product Revenue,2025-12,52357.19
+4000,4000 Product Revenue,2026-01,54392.03
+4000,4000 Product Revenue,2026-02,57271.54
+4100,4100 Service Revenue,2025-01,6500.00
+4100,4100 Service Revenue,2025-02,6750.00
+4100,4100 Service Revenue,2025-03,7000.00
+4100,4100 Service Revenue,2025-04,7250.00
+4100,4100 Service Revenue,2025-05,7500.00
+4100,4100 Service Revenue,2025-06,7750.00
+4100,4100 Service Revenue,2025-07,8000.00
+4100,4100 Service Revenue,2025-08,8250.00
+4100,4100 Service Revenue,2025-09,8500.00
+4100,4100 Service Revenue,2025-10,8750.00
+4100,4100 Service Revenue,2025-11,9000.00
+4100,4100 Service Revenue,2025-12,9250.00
+4100,4100 Service Revenue,2026-01,9500.00
+4100,4100 Service Revenue,2026-02,9750.00
+4900,4900 Interest Income,2025-01,2.00
+4900,4900 Interest Income,2025-02,4.00
+4900,4900 Interest Income,2025-03,6.00
+4900,4900 Interest Income,2025-04,8.00
+4900,4900 Interest Income,2025-05,10.01
+4900,4900 Interest Income,2025-06,12.01
+4900,4900 Interest Income,2025-07,14.02
+4900,4900 Interest Income,2025-08,16.02
+4900,4900 Interest Income,2025-09,18.03
+5000,5000 Cost of Goods Sold - Components,2025-01,9231.03
+5000,5000 Cost of Goods Sold - Components,2025-02,11298.82
+5000,5000 Cost of Goods Sold - Components,2025-03,10904.51
+5000,5000 Cost of Goods Sold - Components,2025-04,12505.81
+5000,5000 Cost of Goods Sold - Components,2025-05,11122.53
+5000,5000 Cost of Goods Sold - Components,2025-06,12647.01
+5000,5000 Cost of Goods Sold - Components,2025-07,15709.33
+5000,5000 Cost of Goods Sold - Components,2025-08,20352.20
+5000,5000 Cost of Goods Sold - Components,2025-09,18742.49
+5000,5000 Cost of Goods Sold - Components,2025-10,14771.05
+5000,5000 Cost of Goods Sold - Components,2025-11,15288.41
+5000,5000 Cost of Goods Sold - Components,2025-12,15930.57
+5000,5000 Cost of Goods Sold - Components,2026-01,16217.01
+5000,5000 Cost of Goods Sold - Components,2026-02,17002.41
+5100,5100 Shipping and Freight,2025-01,1527.03
+5100,5100 Shipping and Freight,2025-02,1603.60
+5100,5100 Shipping and Freight,2025-03,2744.76
+5100,5100 Shipping and Freight,2025-04,5326.49
+5100,5100 Shipping and Freight,2025-05,2731.23
+5100,5100 Shipping and Freight,2025-06,2882.00
+5100,5100 Shipping and Freight,2025-07,5500.80
+5100,5100 Shipping and Freight,2025-08,2463.80
+5100,5100 Shipping and Freight,2025-09,4141.79
+6000,6000 Salaries and Wages,2025-01,38000.00
+6000,6000 Salaries and Wages,2025-02,38900.00
+6000,6000 Salaries and Wages,2025-03,39800.00
+6000,6000 Salaries and Wages,2025-04,40700.00
+6000,6000 Salaries and Wages,2025-05,41600.00
+6000,6000 Salaries and Wages,2025-06,42500.00
+6000,6000 Salaries and Wages,2025-07,43400.00
+6000,6000 Salaries and Wages,2025-08,44300.00
+6000,6000 Salaries and Wages,2025-09,45200.00
+6000,6000 Salaries and Wages,2025-10,46100.00
+6000,6000 Salaries and Wages,2025-11,47000.00
+6000,6000 Salaries and Wages,2025-12,47900.00
+6000,6000 Salaries and Wages,2026-01,48800.00
+6000,6000 Salaries and Wages,2026-02,49700.00
+6010,6010 Payroll Taxes,2025-01,2907.00
+6010,6010 Payroll Taxes,2025-02,2975.84
+6010,6010 Payroll Taxes,2025-03,3044.70
+6010,6010 Payroll Taxes,2025-04,3113.56
+6010,6010 Payroll Taxes,2025-05,3182.40
+6010,6010 Payroll Taxes,2025-06,3251.24
+6010,6010 Payroll Taxes,2025-07,3320.10
+6010,6010 Payroll Taxes,2025-08,3388.96
+6010,6010 Payroll Taxes,2025-09,3457.80
+6010,6010 Payroll Taxes,2025-10,3526.64
+6010,6010 Payroll Taxes,2025-11,3595.50
+6010,6010 Payroll Taxes,2025-12,3664.36
+6010,6010 Payroll Taxes,2026-01,3733.20
+6010,6010 Payroll Taxes,2026-02,3802.04
+6100,6100 Contract Engineering,2025-01,9137.50
+6100,6100 Contract Engineering,2025-02,7821.31
+6100,6100 Contract Engineering,2025-03,10558.00
+6100,6100 Contract Engineering,2025-04,7947.31
+6100,6100 Contract Engineering,2025-05,14403.55
+6100,6100 Contract Engineering,2025-06,12033.43
+6100,6100 Contract Engineering,2025-07,11428.22
+6100,6100 Contract Engineering,2025-08,15135.30
+6100,6100 Contract Engineering,2025-09,15821.04
+6200,6200 Software Subscriptions,2025-01,105.26
+6200,6200 Software Subscriptions,2025-02,254.17
+6200,6200 Software Subscriptions,2025-03,855.09
+6200,6200 Software Subscriptions,2025-04,901.02
+6200,6200 Software Subscriptions,2025-05,800.00
+6200,6200 Software Subscriptions,2025-06,994.76
+6200,6200 Software Subscriptions,2025-07,1303.05
+6200,6200 Software Subscriptions,2025-08,800.00
+6300,6300 Cloud Hosting,2025-01,2790.97
+6300,6300 Cloud Hosting,2025-02,2520.00
+6300,6300 Cloud Hosting,2025-03,5000.05
+6300,6300 Cloud Hosting,2025-04,2953.32
+6300,6300 Cloud Hosting,2025-05,5816.72
+6300,6300 Cloud Hosting,2025-06,4385.26
+6300,6300 Cloud Hosting,2025-07,6137.03
+6400,6400 Rent,2025-01,6500.00
+6400,6400 Rent,2025-02,6500.00
+6400,6400 Rent,2025-03,6500.00
+6400,6400 Rent,2025-04,6500.00
+6400,6400 Rent,2025-05,6500.00
+6400,6400 Rent,2025-06,6500.00
+6400,6400 Rent,2025-07,6500.00
+6400,6400 Rent,2025-08,6500.00
+6400,6400 Rent,2025-09,6500.00
+6500,6500 Insurance,2025-01,1200.00
+6500,6500 Insurance,2025-02,1200.00
+6500,6500 Insurance,2025-03,1200.00
+6500,6500 Insurance,2025-04,1200.00
+6500,6500 Insurance,2025-05,1200.00
+6500,6500 Insurance,2025-06,1200.00
+6600,6600 Marketing and Advertising,2025-01,1138.72
+6600,6600 Marketing and Advertising,2025-02,5575.64
+6600,6600 Marketing and Advertising,2025-03,5513.90
+6600,6600 Marketing and Advertising,2025-05,5574.51
+6600,6600 Marketing and Advertising,2025-06,2464.97
+6600,6600 Marketing and Advertising,2025-07,5235.33
+6600,6600 Marketing and Advertising,2025-09,2095.45
+6700,6700 Office Supplies,2025-01,339.98
+6700,6700 Office Supplies,2025-02,324.36
+6700,6700 Office Supplies,2025-05,410.06
+6700,6700 Office Supplies,2025-07,634.73
+6800,6800 Professional Fees,2025-01,1978.92
+6800,6800 Professional Fees,2025-02,3954.24
+6800,6800 Professional Fees,2025-03,2556.97
+6800,6800 Professional Fees,2025-04,8276.08
+6800,6800 Professional Fees,2025-05,7024.99
+6800,6800 Professional Fees,2025-06,15495.76
+6800,6800 Professional Fees,2025-07,4581.42
+6800,6800 Professional Fees,2025-08,3611.52
+6800,6800 Professional Fees,2025-09,6533.52
+6900,6900 Travel and Meals,2025-02,1678.01
+6900,6900 Travel and Meals,2025-03,1033.08
+6900,6900 Travel and Meals,2025-04,779.75
+6900,6900 Travel and Meals,2025-05,1252.12
+6900,6900 Travel and Meals,2025-06,1357.58
+6900,6900 Travel and Meals,2025-07,99.56
+6950,6950 Bank and Processor Fees,2025-01,733.98
+6950,6950 Bank and Processor Fees,2025-02,786.38
+6950,6950 Bank and Processor Fees,2025-03,863.25
+6950,6950 Bank and Processor Fees,2025-04,869.71
+6950,6950 Bank and Processor Fees,2025-05,909.61
+6950,6950 Bank and Processor Fees,2025-06,978.96
+6950,6950 Bank and Processor Fees,2025-07,1036.92
+6950,6950 Bank and Processor Fees,2025-08,1046.44
+6950,6950 Bank and Processor Fees,2025-09,357.44
+7000,7000 Depreciation Expense,2025-02,800.00
+7000,7000 Depreciation Expense,2025-03,800.00
+7000,7000 Depreciation Expense,2025-04,800.00
+7000,7000 Depreciation Expense,2025-05,800.00
+7000,7000 Depreciation Expense,2025-06,800.00
+7000,7000 Depreciation Expense,2025-07,800.00
+7000,7000 Depreciation Expense,2025-08,800.00
+7000,7000 Depreciation Expense,2025-09,800.00
+7000,7000 Depreciation Expense,2025-10,800.00
+7000,7000 Depreciation Expense,2025-11,800.00
+7000,7000 Depreciation Expense,2025-12,800.00
+7000,7000 Depreciation Expense,2026-01,800.00
+7000,7000 Depreciation Expense,2026-02,800.00
+7100,7100 Amortization Expense,2025-01,1000.00
+7100,7100 Amortization Expense,2025-02,1000.00
+7100,7100 Amortization Expense,2025-03,1000.00
+7100,7100 Amortization Expense,2025-04,1000.00
+7100,7100 Amortization Expense,2025-05,1000.00
+7100,7100 Amortization Expense,2025-06,1000.00
+7100,7100 Amortization Expense,2025-07,1000.00

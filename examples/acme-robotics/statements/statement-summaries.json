@@ -1,0 +1,374 @@
+{
+  "note": "What each statement's printed summary box says. A CSV has no summary box, so these are carried here for the tie-out to check against. One of them is deliberately mangled; see MANIFEST.md.",
+  "statements": {
+    "acme-card-3391-statement-2025-01.csv": {
+      "account": "card-3391",
+      "month": "2025-01",
+      "opening_balance": "-4182.65",
+      "closing_balance": "-5901.96",
+      "total_deposits": "4182.65",
+      "total_withdrawals": "-5901.96",
+      "rows": 8
+    },
+    "acme-card-3391-statement-2025-02.csv": {
+      "account": "card-3391",
+      "month": "2025-02",
+      "opening_balance": "-5901.96",
+      "closing_balance": "-8248.71",
+      "total_deposits": "5901.96",
+      "total_withdrawals": "-8248.71",
+      "rows": 9
+    },
+    "acme-card-3391-statement-2025-03.csv": {
+      "account": "card-3391",
+      "month": "2025-03",
+      "opening_balance": "-8248.71",
+      "closing_balance": "-13126.90",
+      "total_deposits": "8248.71",
+      "total_withdrawals": "-13126.90",
+      "rows": 13
+    },
+    "acme-card-3391-statement-2025-04.csv": {
+      "account": "card-3391",
+      "month": "2025-04",
+      "opening_balance": "-13126.90",
+      "closing_balance": "-5680.12",
+      "total_deposits": "13126.90",
+      "total_withdrawals": "-5680.12",
+      "rows": 8
+    },
+    "acme-card-3391-statement-2025-05.csv": {
+      "account": "card-3391",
+      "month": "2025-05",
+      "opening_balance": "-5680.12",
+      "closing_balance": "-10743.03",
+      "total_deposits": "5680.12",
+      "total_withdrawals": "-10743.03",
+      "rows": 15
+    },
+    "acme-card-3391-statement-2025-06.csv": {
+      "account": "card-3391",
+      "month": "2025-06",
+      "opening_balance": "-10743.03",
+      "closing_balance": "-10282.64",
+      "total_deposits": "10743.03",
+      "total_withdrawals": "-10282.64",
+      "rows": 15
+    },
+    "acme-card-3391-statement-2025-07.csv": {
+      "account": "card-3391",
+      "month": "2025-07",
+      "opening_balance": "-10282.64",
+      "closing_balance": "-11377.24",
+      "total_deposits": "10282.64",
+      "total_withdrawals": "-11377.24",
+      "rows": 14
+    },
+    "acme-card-3391-statement-2025-08.csv": {
+      "account": "card-3391",
+      "month": "2025-08",
+      "opening_balance": "-11377.24",
+      "closing_balance": "-8983.02",
+      "total_deposits": "11377.24",
+      "total_withdrawals": "-8983.02",
+      "rows": 12
+    },
+    "acme-card-3391-statement-2025-09.csv": {
+      "account": "card-3391",
+      "month": "2025-09",
+      "opening_balance": "-8983.02",
+      "closing_balance": "-7729.21",
+      "total_deposits": "8983.02",
+      "total_withdrawals": "-7729.21",
+      "rows": 12
+    },
+    "acme-card-3391-statement-2025-10.csv": {
+      "account": "card-3391",
+      "month": "2025-10",
+      "opening_balance": "-7729.21",
+      "closing_balance": "-16937.82",
+      "total_deposits": "7729.21",
+      "total_withdrawals": "-16937.82",
+      "rows": 25
+    },
+    "acme-card-3391-statement-2025-11.csv": {
+      "account": "card-3391",
+      "month": "2025-11",
+      "opening_balance": "-16937.82",
+      "closing_balance": "-15045.25",
+      "total_deposits": "16937.82",
+      "total_withdrawals": "-15045.25",
+      "rows": 21
+    },
+    "acme-card-3391-statement-2025-12.csv": {
+      "account": "card-3391",
+      "month": "2025-12",
+      "opening_balance": "-15045.25",
+      "closing_balance": "-8348.73",
+      "total_deposits": "15045.25",
+      "total_withdrawals": "-8348.73",
+      "rows": 18
+    },
+    "acme-card-3391-statement-2026-01.csv": {
+      "account": "card-3391",
+      "month": "2026-01",
+      "opening_balance": "-8348.73",
+      "closing_balance": "-18119.76",
+      "total_deposits": "8348.73",
+      "total_withdrawals": "-18119.76",
+      "rows": 29
+    },
+    "acme-card-3391-statement-2026-02.csv": {
+      "account": "card-3391",
+      "month": "2026-02",
+      "opening_balance": "-18119.76",
+      "closing_balance": "-19148.67",
+      "total_deposits": "18119.76",
+      "total_withdrawals": "-19148.67",
+      "rows": 28
+    },
+    "acme-checking-7742-statement-2025-01.csv": {
+      "account": "checking-7742",
+      "month": "2025-01",
+      "opening_balance": "0.00",
+      "closing_balance": "405503.97",
+      "total_deposits": "547655.04",
+      "total_withdrawals": "-142151.07",
+      "rows": 22
+    },
+    "acme-checking-7742-statement-2025-02.csv": {
+      "account": "checking-7742",
+      "month": "2025-02",
+      "opening_balance": "405503.97",
+      "closing_balance": "332464.85",
+      "total_deposits": "60144.86",
+      "total_withdrawals": "-133183.98",
+      "rows": 26
+    },
+    "acme-checking-7742-statement-2025-03.csv": {
+      "account": "checking-7742",
+      "month": "2025-03",
+      "opening_balance": "332464.85",
+      "closing_balance": "299039.18",
+      "total_deposits": "64409.48",
+      "total_withdrawals": "-97835.15",
+      "rows": 25
+    },
+    "acme-checking-7742-statement-2025-04.csv": {
+      "account": "checking-7742",
+      "month": "2025-04",
+      "opening_balance": "299039.18",
+      "closing_balance": "268138.89",
+      "total_deposits": "68959.90",
+      "total_withdrawals": "-99860.19",
+      "rows": 33
+    },
+    "acme-checking-7742-statement-2025-05.csv": {
+      "account": "checking-7742",
+      "month": "2025-05",
+      "opening_balance": "268138.89",
+      "closing_balance": "491757.10",
+      "total_deposits": "322724.82",
+      "total_withdrawals": "-99106.61",
+      "rows": 32
+    },
+    "acme-checking-7742-statement-2025-07.csv": {
+      "account": "checking-7742",
+      "month": "2025-07",
+      "opening_balance": "459762.93",
+      "closing_balance": "434042.31",
+      "total_deposits": "80718.22",
+      "total_withdrawals": "-106438.84",
+      "rows": 39
+    },
+    "acme-checking-7742-statement-2025-08.csv": {
+      "account": "checking-7742",
+      "month": "2025-08",
+      "opening_balance": "434042.31",
+      "closing_balance": "405117.36",
+      "total_deposits": "82315.52",
+      "total_withdrawals": "-111240.47",
+      "rows": 46
+    },
+    "acme-checking-7742-statement-2025-09.csv": {
+      "account": "checking-7742",
+      "month": "2025-09",
+      "opening_balance": "405117.36",
+      "closing_balance": "375943.82",
+      "total_deposits": "87645.67",
+      "total_withdrawals": "-116819.21",
+      "rows": 50
+    },
+    "acme-checking-7742-statement-2025-10.csv": {
+      "account": "checking-7742",
+      "month": "2025-10",
+      "opening_balance": "375943.82",
+      "closing_balance": "355611.24",
+      "total_deposits": "90721.29",
+      "total_withdrawals": "-111053.87",
+      "rows": 40
+    },
+    "acme-checking-7742-statement-2025-11.csv": {
+      "account": "checking-7742",
+      "month": "2025-11",
+      "opening_balance": "355611.24",
+      "closing_balance": "316882.98",
+      "total_deposits": "93017.04",
+      "total_withdrawals": "-131745.30",
+      "rows": 48
+    },
+    "acme-checking-7742-statement-2025-12.csv": {
+      "account": "checking-7742",
+      "month": "2025-12",
+      "opening_balance": "316882.98",
+      "closing_balance": "279433.91",
+      "total_deposits": "97871.06",
+      "total_withdrawals": "-135320.13",
+      "rows": 55
+    },
+    "acme-checking-7742-statement-2026-01.csv": {
+      "account": "checking-7742",
+      "month": "2026-01",
+      "opening_balance": "279433.91",
+      "closing_balance": "257895.49",
+      "total_deposits": "102558.98",
+      "total_withdrawals": "-$1 4, 07.40",
+      "rows": 48
+    },
+    "acme-checking-7742-statement-2026-02.csv": {
+      "account": "checking-7742",
+      "month": "2026-02",
+      "opening_balance": "257895.49",
+      "closing_balance": "230302.31",
+      "total_deposits": "106122.45",
+      "total_withdrawals": "-133715.63",
+      "rows": 53
+    },
+    "acme-savings-7809-statement-2025-01.csv": {
+      "account": "savings-7809",
+      "month": "2025-01",
+      "opening_balance": "0.00",
+      "closing_balance": "5002.00",
+      "total_deposits": "5002.00",
+      "total_withdrawals": "0.00",
+      "rows": 2
+    },
+    "acme-savings-7809-statement-2025-02.csv": {
+      "account": "savings-7809",
+      "month": "2025-02",
+      "opening_balance": "5002.00",
+      "closing_balance": "10006.00",
+      "total_deposits": "5004.00",
+      "total_withdrawals": "0.00",
+      "rows": 2
+    },
+    "acme-savings-7809-statement-2025-03.csv": {
+      "account": "savings-7809",
+      "month": "2025-03",
+      "opening_balance": "10006.00",
+      "closing_balance": "15012.00",
+      "total_deposits": "5006.00",
+      "total_withdrawals": "0.00",
+      "rows": 2
+    },
+    "acme-savings-7809-statement-2025-04.csv": {
+      "account": "savings-7809",
+      "month": "2025-04",
+      "opening_balance": "15012.00",
+      "closing_balance": "20020.00",
+      "total_deposits": "5008.00",
+      "total_withdrawals": "0.00",
+      "rows": 2
+    },
+    "acme-savings-7809-statement-2025-05.csv": {
+      "account": "savings-7809",
+      "month": "2025-05",
+      "opening_balance": "20020.00",
+      "closing_balance": "25030.01",
+      "total_deposits": "5010.01",
+      "total_withdrawals": "0.00",
+      "rows": 2
+    },
+    "acme-savings-7809-statement-2025-06.csv": {
+      "account": "savings-7809",
+      "month": "2025-06",
+      "opening_balance": "25030.01",
+      "closing_balance": "30042.02",
+      "total_deposits": "5012.01",
+      "total_withdrawals": "0.00",
+      "rows": 2
+    },
+    "acme-savings-7809-statement-2025-07.csv": {
+      "account": "savings-7809",
+      "month": "2025-07",
+      "opening_balance": "30042.02",
+      "closing_balance": "35056.04",
+      "total_deposits": "5014.02",
+      "total_withdrawals": "0.00",
+      "rows": 2
+    },
+    "acme-savings-7809-statement-2025-08.csv": {
+      "account": "savings-7809",
+      "month": "2025-08",
+      "opening_balance": "35056.04",
+      "closing_balance": "40072.06",
+      "total_deposits": "5016.02",
+      "total_withdrawals": "0.00",
+      "rows": 2
+    },
+    "acme-savings-7809-statement-2025-09.csv": {
+      "account": "savings-7809",
+      "month": "2025-09",
+      "opening_balance": "40072.06",
+      "closing_balance": "45090.09",
+      "total_deposits": "5018.03",
+      "total_withdrawals": "0.00",
+      "rows": 2
+    },
+    "acme-savings-7809-statement-2025-10.csv": {
+      "account": "savings-7809",
+      "month": "2025-10",
+      "opening_balance": "45090.09",
+      "closing_balance": "50110.13",
+      "total_deposits": "5020.04",
+      "total_withdrawals": "0.00",
+      "rows": 2
+    },
+    "acme-savings-7809-statement-2025-11.csv": {
+      "account": "savings-7809",
+      "month": "2025-11",
+      "opening_balance": "50110.13",
+      "closing_balance": "55132.17",
+      "total_deposits": "5022.04",
+      "total_withdrawals": "0.00",
+      "rows": 2
+    },
+    "acme-savings-7809-statement-2025-12.csv": {
+      "account": "savings-7809",
+      "month": "2025-12",
+      "opening_balance": "55132.17",
+      "closing_balance": "60156.22",
+      "total_deposits": "5024.05",
+      "total_withdrawals": "0.00",
+      "rows": 2
+    },
+    "acme-savings-7809-statement-2026-01.csv": {
+      "account": "savings-7809",
+      "month": "2026-01",
+      "opening_balance": "60156.22",
+      "closing_balance": "65182.28",
+      "total_deposits": "5026.06",
+      "total_withdrawals": "0.00",
+      "rows": 2
+    },
+    "acme-savings-7809-statement-2026-02.csv": {
+      "account": "savings-7809",
+      "month": "2026-02",
+      "opening_balance": "65182.28",
+      "closing_balance": "70210.35",
+      "total_deposits": "5028.07",
+      "total_withdrawals": "0.00",
+      "rows": 2
+    }
+  }
+}

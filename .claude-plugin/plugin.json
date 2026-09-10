@@ -1,0 +1,13 @@
+{
+  "name": "close-the-books",
+  "version": "0.1.0",
+  "description": "Catch up and close a QuickBooks Online year with your own AI agent. Reads your exports, writes import files you review and upload yourself. Nothing posts without you.",
+  "author": {
+    "name": "Median Labs Inc.",
+    "url": "https://medianfi.com"
+  },
+  "homepage": "https://github.com/median-labs/close-the-books",
+  "license": "MIT",
+  "keywords": ["bookkeeping", "accounting", "quickbooks", "close", "reconciliation", "catch-up"],
+  "hooks": "./hooks/hooks.json"
+}

@@ -1,0 +1,52 @@
+# Two jobs here, and they pull in opposite directions.
+#
+# 1. A user's financial data must never be committed, whatever they name it.
+# 2. The engine's own source and the invented example must always be committed.
+#
+# The data patterns below are ANCHORED AT THE REPO ROOT (a leading slash) rather
+# than written as `**/statements/`. The wildcard form once excluded
+# `lib/closethebooks/statements/`, which is the Python that parses bank
+# statements, so a fresh clone was missing the parser package while every local
+# test passed, because the files were already on disk. A gitignore negation
+# cannot rescue a file inside an excluded directory, so the rule itself has to
+# be narrow. Anchoring is enough: git only ignores paths inside this repo, and a
+# working directory the user keeps elsewhere is not this repo's concern.
+
+# A profile holds one real company's chart, vendors and open questions.
+# The engine ships; the company does not.
+profiles/*.local.json
+profiles/*.local.yaml
+
+# A working directory: exports, statements, review workbooks, import files,
+# answers. All of it is somebody's financial data.
+/workdir/
+/exports/
+/statements/
+/for-review/
+/review/
+/import/
+/answers/
+/questions/
+/reports/
+/handoff/
+**/workdir/
+*.APPROVED
+
+# Real financial documents, wherever they land, except the invented company's.
+*.qbo
+*.qbx
+*.qba
+*.ofx
+/*.pdf
+/*.xlsx
+/*.csv
+
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+.DS_Store
+build/
+dist/
+*.egg-info/
